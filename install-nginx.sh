@@ -1,7 +1,8 @@
 #!/bin/bash
-
 # Only for Debian System
-# Written by ATP for personal test
+# Written on 2021-09-19 by ATP for personal test
+# Website: https://www.zatp.com
+# Github: https://github.com/scenery/MyScripts
 
 green(){
     echo -e "\033[32m\033[01m$1\033[0m"
@@ -80,7 +81,7 @@ EOF
     green "====================================="
 }
 
-start_menu() {
+main() {
     clear
     green "+------------------------------------------------+"
     green "| Auto Compiling and Installing Nginx            |"
@@ -92,7 +93,7 @@ start_menu() {
     green " 1. Install Nginx"
     yellow " 0. Exit"
     echo
-    read -p "Enter a number:" num
+    read -p "Enter a number: " num
     case "$num" in
     1)
         install_nginx
@@ -104,9 +105,10 @@ start_menu() {
         clear
         red "Invalid number!"
         sleep 2s
-        start_menu
+        main
         ;;
     esac
 }
 
-start_menu
+# Run
+main
