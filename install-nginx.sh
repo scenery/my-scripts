@@ -18,7 +18,7 @@ install_nginx() {
     green "=====Start Installing Nginx====="
     sleep 1
     apt install build-essential libpcre3 libpcre3-dev zlib1g-dev gcc make curl ca-certificates git wget -y
-    mkdir /root/temp && cd /root/temp
+    mkdir /root/nginx-temp && cd /root/nginx-temp
     # nginx-cache-purge
     # wget https://github.com/FRiCKLE/ngx_cache_purge/archive/2.3.tar.gz
     # tar -zxvf 2.3.tar.gz
@@ -28,7 +28,7 @@ install_nginx() {
     mkdir /etc/nginx/conf.d
     git clone https://github.com/google/ngx_brotli
     cd ngx_brotli && git submodule update --init
-    cd /root/temp
+    cd /root/nginx-temp
     wget https://nginx.org/download/nginx-1.20.1.tar.gz
     tar xf nginx-1.20.1.tar.gz && rm nginx-1.20.1.tar.gz
     cd nginx-1.20.1
@@ -73,7 +73,7 @@ EOF
     systemctl daemon-reload
     systemctl enable nginx.service
     systemctl start nginx.service
-    green "========Nginx instll finished========"
+    green "========Nginx install success========"
     green "Nginx Version: 1.20.1"
     green "Openssl Version: 1.1.1l"
     green "Program Path: /etc/nginx/"
