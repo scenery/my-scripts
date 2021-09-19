@@ -26,6 +26,8 @@ Auto install Linux OS (Debian, Ubuntu, CentOS) with DD if your VPS do not suppor
 Default User: root; Password: MoeClub.org
 
 ```
+bash <(curl -Ls git.io/ddlinux.sh) -[command]
+# or
 bash <(curl -Ls https://raw.githubusercontent.com/scenery/MyScripts/main/InstallNET.sh) -[command]
 ```
 
