@@ -43,7 +43,13 @@ run_trace() {
 }
 
 clean_up() {
-    mkdir /root/traceroute-temp || rm -rf /root/traceroute-temp
+    if [ ! -d "/root/traceroute-temp" ]
+    then
+        red "Path '/root/traceroute-temp' does not exist, if you renamed the folder, please delete it manually."
+    else
+        rm -rf /root/traceroute-temp
+        green "Clean up success!"
+    fi
 }
 
 main() {
@@ -54,7 +60,7 @@ main() {
     green "+------------------------------------------------+"
     echo
     green " 1. Run traceroute"
-    green " 2. Clean up all files"
+    red " 2. Clean up all files"
     yellow " 0. Exit"
     echo
     read -p "Enter a number: " num
