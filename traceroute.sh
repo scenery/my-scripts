@@ -53,7 +53,7 @@ main() {
     green "+------------------------------------------------+"
     echo
     green " 1. Run traceroute"
-    greed " 2. Clean up all files"
+    green " 2. Clean up all files"
     yellow " 0. Exit"
     echo
     read -p "Enter a number: " num
