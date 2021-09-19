@@ -47,7 +47,7 @@ clean_up() {
 
 main() {
     green "+------------------------------------------------+"
-    green "| Trace Route to China Test Tool                 |"
+    green "| Traceroute to China Test                       |"
     green "| Author : Atp <hello@zatp.com>                  |"
     green "| Github: https://github.com/scenery/MyScripts   |"
     green "+------------------------------------------------+"
