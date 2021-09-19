@@ -42,7 +42,7 @@ run_trace() {
 }
 
 clean_up() {
-    rm -rf /root/traceroute-temp
+    mkdir /root/traceroute-temp || rm -rf /root/traceroute-temp
 }
 
 main() {
@@ -59,7 +59,12 @@ main() {
     read -p "Enter a number: " num
     case "$num" in
     1)
-        install_besttrace
+        if [ ! -f "/root/traceroute-temp/besttrace" ]
+        then
+            install_besttrace
+        else
+            cd /root/traceroute-temp
+        fi
         run_trace
         ;;
     2)
