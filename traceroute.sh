@@ -24,20 +24,21 @@ install_besttrace() {
     chmod +x besttrace
 }
 
-next_test() {
+separate() {
     printf "%-70s\n" "-" | sed 's/\s/-/g'
 }
 
 run_trace() {
-    next
-    ip_list=(14.215.116.1 101.95.120.109 58.250.0.1 221.10.254.1 183.192.160.3 183.221.253.100)
+    clear
+    echo "============================Start traceroute============================"
+    ip_list=(14.215.116.1 101.95.120.109 58.250.0.1 119.6.6.6 211.136.112.50 211.137.82.4)
     ip_addr=(广州电信-TCP 上海电信-TCP 深圳联通-TCP 成都联通-TCP 上海移动-TCP 成都移动-TCP)
 
     for i in {0..5}
     do
         echo ${ip_addr[$i]}
         ./besttrace -T -q 1 ${ip_list[$i]}
-        next_test
+        separate
     done
 }
 
