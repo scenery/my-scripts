@@ -47,7 +47,7 @@ clean_up() {
 
 main() {
     green "+------------------------------------------------+"
-    green "| Traceroute to China Test                       |"
+    green "| Test traceroute to China                       |"
     green "| Author : Atp <hello@zatp.com>                  |"
     green "| Github: https://github.com/scenery/MyScripts   |"
     green "+------------------------------------------------+"
@@ -60,7 +60,7 @@ main() {
     case "$num" in
     1)
         install_besttrace
-        run
+        run_trace
         ;;
     2)
         clean_up
