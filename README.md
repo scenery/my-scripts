@@ -40,9 +40,9 @@ Command:
 --ip-gate [gateway]
 --ip-mask [netmask]
 --mirror [mirror link]
--dd [install image with dd function]
--a [auto install]
--m [manual insall]
+-dd (install image with dd function)
+-a (auto install)
+-m (manual insall)
 ```
 
 **e.g.**
