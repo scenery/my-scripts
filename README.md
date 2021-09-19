@@ -2,7 +2,7 @@
 
 Some useful scripts written by myself, but I have no idea what they are :-)
 
-_Notice: All scripts are use for personal test in single environment (only for Debian OS), it may not apply to everyone. You must know what you're doing before run them._
+_Notice: All scripts are use for personal test in single environment (most of them only for Debian OS), it may not apply to everyone. You must know what you're doing before run them._
 
 ## Table of contents
 
