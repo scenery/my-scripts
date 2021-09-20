@@ -1,4 +1,4 @@
-# MyScripts
+# My Scripts
 
 Some useful scripts written by myself, but I have no idea what they are :-)
 
@@ -19,7 +19,7 @@ Auto compiling and installing Nginx-v1.20.1
 ```
 bash <(curl -Ls git.io/nginx.sh)
 # or
-bash <(curl -Ls https://raw.githubusercontent.com/scenery/MyScripts/main/install-nginx.sh)
+bash <(curl -Ls https://raw.githubusercontent.com/scenery/my-scripts/main/install-nginx.sh)
 ```
 
 ### traceroute
@@ -28,7 +28,7 @@ A simple tool to test traceroute from your VPS/Server to Mainland China, powered
 ```
 bash <(curl -Ls git.io/traceroute.sh)
 # or
-bash <(curl -Ls https://raw.githubusercontent.com/scenery/MyScripts/main/traceroute.sh)
+bash <(curl -Ls https://raw.githubusercontent.com/scenery/my-scripts/main/traceroute.sh)
 ```
 
 ### install-linux
@@ -40,7 +40,7 @@ Default User: root; Password: MoeClub.org
 ```
 bash <(curl -Ls git.io/ddlinux.sh) -[command]
 # or
-bash <(curl -Ls https://raw.githubusercontent.com/scenery/MyScripts/main/InstallNET.sh) -[command]
+bash <(curl -Ls https://raw.githubusercontent.com/scenery/my-scripts/main/InstallNET.sh) -[command]
 ```
 
 Command:
