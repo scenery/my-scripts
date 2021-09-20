@@ -4,7 +4,7 @@
 # Powered by Besttrace (ipip.net)
 # Written on 2021-09-19 by ATP
 # Website: https://www.zatp.com
-# Github: https://github.com/scenery/MyScripts
+# Github: https://github.com/scenery/my-scripts
 
 green(){
     echo -e "\033[32m\033[01m$1\033[0m"
@@ -31,8 +31,8 @@ separate() {
 run_trace() {
     clear
     echo "============================Start traceroute============================"
-    ip_list=(14.215.116.1 101.95.120.109 58.250.0.1 119.6.6.6 211.136.112.50 211.137.82.4)
-    ip_addr=(广州电信-TCP 上海电信-TCP 深圳联通-TCP 成都联通-TCP 上海移动-TCP 成都移动-TCP)
+    ip_list=(14.215.116.1 101.95.120.109 123.125.81.6 58.250.0.1 211.138.180.2 211.137.82.4)
+    ip_addr=(广州电信-TCP 上海电信-TCP 北京联通-TCP 深圳联通-TCP 安徽移动-TCP 成都移动-TCP)
 
     for i in {0..5}
     do
@@ -53,11 +53,11 @@ clean_up() {
 }
 
 main() {
-    green "+------------------------------------------------+"
-    green "| Test traceroute to China                       |"
-    green "| Author : Atp <hello@zatp.com>                  |"
-    green "| Github: https://github.com/scenery/MyScripts   |"
-    green "+------------------------------------------------+"
+    green "+-------------------------------------------------+"
+    green "| Traceroute to China                             |"
+    green "| Author : Atp <hello@zatp.com>                   |"
+    green "| Github: https://github.com/scenery/my-scripts   |"
+    green "+-------------------------------------------------+"
     echo
     green " 1. Run traceroute"
     red " 2. Clean up all files"
