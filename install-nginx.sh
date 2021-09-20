@@ -2,7 +2,7 @@
 # Only for Debian System
 # Written on 2021-09-19 by ATP for personal test
 # Website: https://www.zatp.com
-# Github: https://github.com/scenery/MyScripts
+# Github: https://github.com/scenery/my-scripts
 
 green(){
     echo -e "\033[32m\033[01m$1\033[0m"
@@ -15,7 +15,7 @@ yellow(){
 }
 
 install_nginx() {
-    green "=====Start Installing Nginx====="
+    green "================Start Installing Nginx==============="
     sleep 1
     apt install build-essential libpcre3 libpcre3-dev zlib1g-dev gcc make curl ca-certificates git wget -y
     mkdir /root/nginx-temp && cd /root/nginx-temp
@@ -73,22 +73,22 @@ EOF
     systemctl daemon-reload
     systemctl enable nginx.service
     systemctl start nginx.service
-    green "========Nginx install success========"
+    green "================Nginx Install Success================"
     green "Nginx Version: 1.20.1"
     green "Openssl Version: 1.1.1l"
     green "Program Path: /etc/nginx/"
     green "Status: service nginx status"
-    green "====================================="
+    green "====================================================="
 }
 
 main() {
     clear
-    green "+------------------------------------------------+"
-    green "| Auto Compiling and Installing Nginx            |"
-    green "| ** Only for Debian System **                   |"
-    green "| Author : Atp <hello@zatp.com>                  |"
-    green "| Github: https://github.com/scenery/MyScripts   |"
-    green "+------------------------------------------------+"
+    green "+---------------------------------------------------+"
+    green "| Auto Compiling and Installing Nginx               |"
+    green "| ** Only for Debian System **                      |"
+    green "| Author : Atp <hello@zatp.com>                     |"
+    green "| Github: https://github.com/scenery/my-scripts     |"
+    green "+---------------------------------------------------+"
     echo
     green " 1. Install Nginx"
     yellow " 0. Exit"
