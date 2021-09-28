@@ -45,9 +45,7 @@ install_nginx() {
         --with-stream \
         --with-stream_ssl_module \
         --with-stream_ssl_preread_module \
-        --add-module=../ngx_brotli \
-    # The following is need for frontend-proxy server
-        --with-stream_ssl_preread_module
+        --add-module=../ngx_brotli
     #    --add-module=../ngx_cache_purge-2.3
     make && make install
     
