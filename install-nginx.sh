@@ -1,5 +1,4 @@
 #!/bin/bash
-# Only for Debian System
 # Written on 2021-09-19 by ATP for personal test
 # Website: https://www.zatp.com
 # Github: https://github.com/scenery/my-scripts
@@ -15,6 +14,7 @@ yellow(){
 }
 
 install_nginx() {
+    SECONDS=0
     green "================Start Installing Nginx==============="
     sleep 1
     apt install build-essential libpcre3 libpcre3-dev zlib1g-dev gcc make curl ca-certificates git wget -y
@@ -77,25 +77,35 @@ EOF
     green "Openssl Version: 1.1.1l"
     green "Program Path: /etc/nginx/"
     green "Status: service nginx status"
+    yellow "Total: $SECONDS seconds"
     green "====================================================="
+}
+
+clean_temp() {
+    rm -rf /root/nginx-temp
+    green "Clean up success!"
 }
 
 main() {
     clear
     green "+---------------------------------------------------+"
-    green "| Auto Compiling and Installing Nginx               |"
-    green "| ** Only for Debian System **                      |"
+    green "| Auto Compiling and Installing Nginx-1.20.1        |"
     green "| Author : Atp <hello@zatp.com>                     |"
-    green "| Github: https://github.com/scenery/my-scripts     |"
+    green "| Github : https://github.com/scenery/my-scripts    |"
+    green "| **This script only supports Debian GNU/Linux**    |"
     green "+---------------------------------------------------+"
     echo
     green " 1. Install Nginx"
+    green " 2. Delete temp installation files"
     yellow " 0. Exit"
     echo
     read -p "Enter a number: " num
     case "$num" in
     1)
         install_nginx
+        ;;
+    2)
+        clean_temp
         ;;
     0)
         exit 1
