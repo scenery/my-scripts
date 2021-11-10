@@ -58,11 +58,11 @@ Wants=network-online.target
  
 [Service]
 Type=forking
-PIDFile=/etc/nginx/logs/nginx.pid
 ExecStartPre=/etc/nginx/sbin/nginx -t -c /etc/nginx/conf/nginx.conf
 ExecStart=/etc/nginx/sbin/nginx -c /etc/nginx/conf/nginx.conf
 ExecReload=/bin/kill -s HUP $MAINPID
 ExecStop=/bin/kill -s TERM $MAINPID
+ExecStopPost=/bin/rm -f /run/nginx.pid
 PrivateTmp=true
  
 [Install]
@@ -96,7 +96,7 @@ main() {
     green "+---------------------------------------------------+"
     echo
     green " 1. Install Nginx"
-    green " 2. Delete temp installation files"
+    red " 2. Delete temp installation files"
     yellow " 0. Exit"
     echo
     read -p "Enter a number: " num
