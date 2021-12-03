@@ -29,9 +29,9 @@ install_nginx() {
     git clone https://github.com/google/ngx_brotli
     cd ngx_brotli && git submodule update --init
     cd /root/nginx-temp
-    wget https://nginx.org/download/nginx-1.20.1.tar.gz
-    tar xf nginx-1.20.1.tar.gz && rm nginx-1.20.1.tar.gz
-    cd nginx-1.20.1
+    wget https://nginx.org/download/nginx-1.20.2.tar.gz
+    tar xf nginx-1.20.2.tar.gz && rm nginx-1.20.2.tar.gz
+    cd nginx-1.20.2
     ./configure \
         --prefix=/etc/nginx \
         --with-openssl=../openssl-1.1.1l \
@@ -73,7 +73,7 @@ EOF
     systemctl enable nginx.service
     systemctl start nginx.service
     green "================Nginx Install Success================"
-    green "Nginx Version: 1.20.1"
+    green "Nginx Version: 1.20.2"
     green "Openssl Version: 1.1.1l"
     green "Program Path: /etc/nginx/"
     green "Status: service nginx status"
@@ -83,13 +83,13 @@ EOF
 
 clean_temp() {
     rm -rf /root/nginx-temp
-    green "Clean up success!"
+    green "Cleanup done!"
 }
 
 main() {
     clear
     green "+---------------------------------------------------+"
-    green "| Auto Compiling and Installing Nginx-1.20.1        |"
+    green "| Auto Compiling and Installing Nginx-1.20.2        |"
     green "| Author : Atp <hello@zatp.com>                     |"
     green "| Github : https://github.com/scenery/my-scripts    |"
     green "| **This script only supports Debian GNU/Linux**    |"
