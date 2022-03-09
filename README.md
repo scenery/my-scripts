@@ -51,8 +51,6 @@ bash <(curl -Ls https://raw.githubusercontent.com/scenery/my-scripts/main/tracer
 
 Check if your IPs unblock Netflix streaming. Support both IPv4 and IPv6 testing.
 ```
-bash <(curl -Ls git.io/traceroute.sh)
-# or
 bash <(curl -Ls https://raw.githubusercontent.com/scenery/my-scripts/main/check-netflix.sh)
 ```
 
