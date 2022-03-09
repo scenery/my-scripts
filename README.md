@@ -8,6 +8,7 @@ _Notice: All scripts are use for personal test in single environment (most of th
 
 * [Install Nginx](#install-nginx)
 * [Traceroute](#traceroute)
+* [Unblock Netflix Check](#check-netflix)
 
 ## Usage
 
@@ -46,4 +47,12 @@ bash <(curl -Ls git.io/traceroute.sh)
 bash <(curl -Ls https://raw.githubusercontent.com/scenery/my-scripts/main/traceroute.sh)
 ```
 
+### check-netflix
+
+Check if your IPs unblock Netflix streaming. Support both IPv4 and IPv6 testing.
+```
+bash <(curl -Ls git.io/traceroute.sh)
+# or
+bash <(curl -Ls https://raw.githubusercontent.com/scenery/my-scripts/main/check-netflix.sh)
+```
 
