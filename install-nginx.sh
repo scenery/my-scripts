@@ -22,8 +22,8 @@ install_nginx() {
     # nginx-cache-purge
     # wget https://github.com/FRiCKLE/ngx_cache_purge/archive/2.3.tar.gz
     # tar -zxvf 2.3.tar.gz
-    wget https://www.openssl.org/source/openssl-1.1.1l.tar.gz
-    tar -xzvf openssl-1.1.1l.tar.gz && rm openssl-1.1.1l.tar.gz
+    wget https://www.openssl.org/source/openssl-1.1.1m.tar.gz
+    tar -xzvf openssl-1.1.1m.tar.gz && rm openssl-1.1.1m.tar.gz
     mkdir /etc/nginx
     mkdir /etc/nginx/conf.d
     git clone https://github.com/google/ngx_brotli
@@ -34,7 +34,7 @@ install_nginx() {
     cd nginx-1.20.2
     ./configure \
         --prefix=/etc/nginx \
-        --with-openssl=../openssl-1.1.1l \
+        --with-openssl=../openssl-1.1.1m \
         --with-openssl-opt='enable-tls1_3' \
         --with-http_v2_module \
         --with-http_ssl_module \
@@ -74,7 +74,7 @@ EOF
     systemctl start nginx.service
     green "================Nginx Install Success================"
     green "Nginx Version: 1.20.2"
-    green "Openssl Version: 1.1.1l"
+    green "Openssl Version: 1.1.1m"
     green "Program Path: /etc/nginx/"
     green "Status: service nginx status"
     yellow "Total: $SECONDS seconds"
@@ -90,7 +90,7 @@ main() {
     clear
     green "+---------------------------------------------------+"
     green "| Auto Compiling and Installing Nginx-1.20.2        |"
-    green "| Author : Atp <hello@zatp.com>                     |"
+    green "| Author : Atp <hi@zatp.com>                        |"
     green "| Github : https://github.com/scenery/my-scripts    |"
     green "| **This script only supports Debian GNU/Linux**    |"
     green "+---------------------------------------------------+"
