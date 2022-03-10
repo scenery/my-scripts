@@ -3,16 +3,29 @@
 # Website: https://www.zatp.com
 # Github: https://github.com/scenery/my-scripts
 
-function test_ipv4() {
+red(){
+    echo -e "\033[31m\033[01m$1\033[0m"
+}
+green(){
+    echo -e "\033[32m\033[01m$1\033[0m"
+}
+yellow(){
+    echo -e "\033[33m\033[01m$1\033[0m"
+}
+blue(){
+    echo -e "\033[34m\033[01m$1\033[0m"
+}
+
+test_ipv4() {
     result=`curl -4sSL "https://www.netflix.com/" | grep "Not Available"`;
     if [ "$result" != "" ];then
-        echo -e "\033[34mSorry, Netflix is not available in your IPv4's region.\033[0m";
+        blue "Sorry, Netflix is not available based on your IPv4 address region.";
         return;
     fi
     
     result=`curl -4sSL "https://www.netflix.com/title/80018499" | grep "page-404"`;
     if [ "$result" != "" ];then
-        echo -e "\033[34mSorry, Your IPv4 is blocked by Netflix.\033[0m";
+        red "Sorry, Your IPv4 address is blocked by Netflix.";
         return;
     fi
     
@@ -24,24 +37,24 @@ function test_ipv4() {
     result6=`curl -4sSL "https://www.netflix.com/title/70202589" | grep "page-404"`;
     
     if [[ "$result1" != "" ]] && [[ "$result2" != "" ]] && [[ "$result3" != "" ]] && [[ "$result4" != "" ]] && [[ "$result5" != "" ]] && [[ "$result6" != "" ]];then
-        echo -e "\033[33mYour IPv4 can unblock Netflix but only Netflix original content.\033[0m";
+        yellow "Your IPv4 address can unblock Netflix but only Netflix original content.";
         return;
     fi
     
-    echo -e "\033[32mCongrats! Your IPv4 can unblock all Netflix content.\033[0m";
+    green "Congrats! Your IPv4 address can unblock all Netflix content.";
     return;
 }
 
-function test_ipv6() {
+test_ipv6() {
     result=`curl -6sSL "https://www.netflix.com/" | grep "Not Available"`;
     if [ "$result" != "" ];then
-        echo -e "\033[34mSorry, Netflix is not available in your IPv6's region.\033[0m";
+        blue "Sorry, Netflix is not available based on your IPv6 address region.";
         return;
     fi
     
     result=`curl -6sSL "https://www.netflix.com/title/80018499" | grep "page-404"`;
     if [ "$result" != "" ];then
-        echo -e "\033[34mSorry, Your IPv6 is blocked by Netflix.\033[0m";
+        red "Sorry, Your IPv6 address is blocked by Netflix.";
         return;
     fi
     
@@ -53,25 +66,29 @@ function test_ipv6() {
     result6=`curl -6sSL "https://www.netflix.com/title/70202589" | grep "page-404"`;
     
     if [[ "$result1" != "" ]] && [[ "$result2" != "" ]] && [[ "$result3" != "" ]] && [[ "$result4" != "" ]] && [[ "$result5" != "" ]] && [[ "$result6" != "" ]];then
-        echo -e "\033[33mYour IPv6 can unblock Netflix but only Netflix original content.\033[0m";
+        yellow "Your IPv6 address can unblock Netflix but only Netflix original content.";
         return;
     fi
     
-    echo -e "\033[32mCongrats! Your IPv6 can unblock all Netflix content.\033[0m";
+    green "Congrats! Your IPv6 address can unblock all Netflix content.";
     return;
 }
 
-echo -e "\033[47;30mTesting IPv4 ../\033[0m"
-check4=`ping 1.1.1.1 -c 1 2>&1 | grep -i "unreachable"`;
-if [ "$check4" == "" ];then
-    test_ipv4;
-else
-    echo -e "\033[34mThe host does not support IPv4 address, skip...\033[0m";
-fi
-echo -e "\033[47;30mTesting IPv6 ../\033[0m"
-check6=`ping6 240c::6666 -c 1 2>&1 | grep -i "unreachable"`;
-if [ "$check6" == "" ];then
-    test_ipv6;
-else
-    echo -e "\033[34mThe host does not support IPv6 address, skip...\033[0m";
-fi
+main() {
+    echo " ** Testing IPv4 "
+    check4=`ping 1.1.1.1 -c 1 2>&1 | grep -i "unreachable"`;
+    if [ "$check4" == "" ];then
+        test_ipv4;
+    else
+        blue "This host does not support IPv4 address, skip...";
+    fi
+    echo " ** Testing IPv6 "
+    check6=`ping6 240c::6666 -c 1 2>&1 | grep -i "unreachable"`;
+    if [ "$check6" == "" ];then
+        test_ipv6;
+    else
+        blue "This host does not support IPv6 address, skip...";
+    fi
+}
+
+main
