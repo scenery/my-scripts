@@ -61,14 +61,14 @@ function test_ipv6() {
     return;
 }
 
-echo " ** Testing IPv4";
+echo -e "\033[47;30mTesting IPv4 ../\033[0m"
 check4=`ping 1.1.1.1 -c 1 2>&1 | grep -i "unreachable"`;
 if [ "$check4" == "" ];then
     test_ipv4;
 else
     echo -e "\033[34mThe host does not support IPv4 address, skip...\033[0m";
 fi
-echo " ** Testing IPv6";
+echo -e "\033[47;30mTesting IPv6 ../\033[0m"
 check6=`ping6 240c::6666 -c 1 2>&1 | grep -i "unreachable"`;
 if [ "$check6" == "" ];then
     test_ipv6;
