@@ -75,20 +75,23 @@ test_ipv6() {
 }
 
 main() {
-    echo " ** Testing IPv4 "
+    echo "-------------------------------------------------"
+    echo "Testing IPv4 ... "
     check4=`ping 1.1.1.1 -c 1 2>&1 | grep -i "unreachable"`;
     if [ "$check4" == "" ];then
         test_ipv4;
     else
         blue "This host does not support IPv4 address, skip...";
     fi
-    echo " ** Testing IPv6 "
+    echo "-------------------------------------------------"
+    echo "Testing IPv6 ... "
     check6=`ping6 240c::6666 -c 1 2>&1 | grep -i "unreachable"`;
     if [ "$check6" == "" ];then
         test_ipv6;
     else
         blue "This host does not support IPv6 address, skip...";
     fi
+    echo "-------------------------------------------------"
 }
 
 main
