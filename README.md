@@ -24,7 +24,7 @@ bash <(curl -Ls https://raw.githubusercontent.com/scenery/my-scripts/main/instal
 ```
 ./configure \
     --prefix=/etc/nginx \
-    --with-openssl=../openssl-1.1.1l \
+    --with-openssl=../openssl-1.1.1m \
     --with-openssl-opt='enable-tls1_3' \
     --with-http_v2_module \
     --with-http_ssl_module \
@@ -40,7 +40,7 @@ bash <(curl -Ls https://raw.githubusercontent.com/scenery/my-scripts/main/instal
 
 ### traceroute
 
-A simple tool to test traceroute from your VPS/Server to Mainland China, powered Besttrace (ipip.net).
+A simple tool to test traceroute from your VPS/Server to Mainland China, powered by Besttrace (ipip.net).
 ```
 bash <(curl -Ls git.io/traceroute.sh)
 # or
