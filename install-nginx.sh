@@ -83,49 +83,51 @@ EOF
 }
 
 clean_temp() {
+    echo
     rm -rf /root/nginx-temp
     green "Cleanup done!"
 }
 
-main() {
-    if [ $(id -u) != "0" ]; then
-        red "Error: You must be root to run this script."
-        exit 1
-    fi   
-    if [ ! -f /etc/debian_version ]; then
-        red "Error: This script only supports Debian GNU/Linux Operating System."
-        exit 1
-    fi
-    clear
-    green "+---------------------------------------------------+"
-    green "| A tool to auto-compile & install Nginx-1.20.2     |"
-    green "| Author : ATP <hi@zatp.com>                        |"
-    green "| Github : https://github.com/scenery/my-scripts    |"
-    green "+---------------------------------------------------+"
+
+if [ $(id -u) != "0" ]; then
+    red "Error: You must be root to run this script."
+    exit 1
+fi   
+if [ ! -f /etc/debian_version ]; then
+    red "Error: This script only supports Debian GNU/Linux Operating System."
+    exit 1
+fi
+# clear
+green "+---------------------------------------------------+"
+green "| A tool to auto-compile & install Nginx-1.20.2     |"
+green "| Author : ATP <hi@zatp.com>                        |"
+green "| Github : https://github.com/scenery/my-scripts    |"
+green "+---------------------------------------------------+"
+echo
+while getopts ":ic" option; do
+    case "${option}" in
+    i)  install_nginx ;;
+    c)  clean_temp ;;
+    \?) echo "Invalid option, you have to use: [-i] or [-c]"
+        echo "-i: Install Nginx"
+        echo "-c: Delete temp files" ;;
+    esac
+done
+if [ $OPTIND = "1" ]; then
+    while :
+    do
     echo
     green " 1. Install Nginx"
     red " 2. Delete temp files"
     yellow " 0. Exit"
     echo
-    read -p "Enter a number: " flag
-    while getopts "ic" flag; do
-        case "${flag}" in
-        1|i)
-            install_nginx
-            ;;
-        2|c)
-            clean_temp
-            ;;
-        0)
-            exit 1
-            ;;
-        *)
-            red "Invalid option."
-            sleep 1
-            ;;
-        esac
+    read -p "Enter a number: " num
+    case "$num" in
+        1)  install_nginx ;;
+        2)  clean_temp ;;
+        0)  exit 0 ;;
+        *)  red "Invalid option." ;;
+    esac
     done
-}
+fi
 
-# Run
-main
