@@ -17,15 +17,17 @@ install_nginx() {
     SECONDS=0
     green "================Start Installing Nginx==============="
     sleep 1
+    NOW=$(date +"%Y-%m-%d")
     apt install build-essential libpcre3 libpcre3-dev zlib1g-dev gcc make curl ca-certificates git wget -y
-    mkdir /root/nginx-temp && cd /root/nginx-temp
+    mkdir /etc/nginx
+    mkdir /etc/nginx/conf.d
+    mkdir /root/nginx-temp
+    cd /root/nginx-temp
     # nginx-cache-purge
     # wget https://github.com/FRiCKLE/ngx_cache_purge/archive/2.3.tar.gz
     # tar -zxvf 2.3.tar.gz
     wget https://www.openssl.org/source/openssl-1.1.1m.tar.gz
     tar -xzvf openssl-1.1.1m.tar.gz && rm openssl-1.1.1m.tar.gz
-    mkdir /etc/nginx
-    mkdir /etc/nginx/conf.d
     git clone https://github.com/google/ngx_brotli
     cd ngx_brotli && git submodule update --init
     cd /root/nginx-temp
@@ -84,8 +86,11 @@ EOF
 
 clean_temp() {
     echo
-    rm -rf /root/nginx-temp
+    if [ -d "/root/nginx-temp" ]; then
+        rm -rf /root/nginx-temp
+    fi
     green "Cleanup done!"
+    echo
 }
 
 
