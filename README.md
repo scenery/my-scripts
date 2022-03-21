@@ -6,18 +6,35 @@ _Notice: All scripts are use for personal test in single environment (most of th
 
 ## Table of contents
 
+* [Server Startup](#server-startup)
 * [Install Nginx](#install-nginx)
 * [Traceroute](#traceroute)
 * [Unblock Netflix Check](#check-netflix)
 
 ## Usage
 
+### server-startup
+
+An initialization script for managing newly deployed cloud servers. This script can help me to automate the tasks I have to set up again and again when booting up a new host.
+
+```
+bash <(curl -Ls https://raw.githubusercontent.com/scenery/my-scripts/main/server-startup.sh)
+```
+
+- Change Hostname
+- Change SSH Port
+- Enable TCP BBR
+- Install Nginx
+- ...
+
 ### install-nginx
 
 Auto compiling and installing latest [Nginx](https://nginx.org/en/download.html) (Stable version)
 ```
 bash <(curl -Ls git.io/nginx.sh)
-# or
+```
+or
+```
 bash <(curl -Ls https://raw.githubusercontent.com/scenery/my-scripts/main/install-nginx.sh)
 ```
 
@@ -43,7 +60,9 @@ bash <(curl -Ls https://raw.githubusercontent.com/scenery/my-scripts/main/instal
 A simple tool to test traceroute from your VPS/Server to Mainland China, powered by Besttrace (ipip.net).
 ```
 bash <(curl -Ls git.io/traceroute.sh)
-# or
+```
+or
+```
 bash <(curl -Ls https://raw.githubusercontent.com/scenery/my-scripts/main/traceroute.sh)
 ```
 
