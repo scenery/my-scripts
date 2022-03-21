@@ -107,24 +107,25 @@ main() {
     red " 2. Delete temp files"
     yellow " 0. Exit"
     echo
-    read -p "Enter a number: " num
-    case "$num" in
-    1|-install)
-        install_nginx
-        ;;
-    2|-clean)
-        clean_temp
-        ;;
-    0)
-        exit 1
-        ;;
-    *)
-        clear
-        red "Invalid number!"
-        sleep 2s
-        main
-        ;;
-    esac
+    read -p "Enter a number: " flag
+    # get any arguments that were passed to the script
+    while getopts 'ic' flag; do
+        case "$flag" in
+        1|i)
+            install_nginx
+            ;;
+        2|c)
+            clean_temp
+            ;;
+        0)
+            exit 1
+            ;;
+        *)
+            red "Invalid option!"
+            sleep 1
+            ;;
+        esac
+    done
 }
 
 # Run
