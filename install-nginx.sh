@@ -108,9 +108,8 @@ main() {
     yellow " 0. Exit"
     echo
     read -p "Enter a number: " flag
-    # get any arguments that were passed to the script
-    while getopts 'ic' flag; do
-        case "$flag" in
+    while getopts "ic" flag; do
+        case "${flag}" in
         1|i)
             install_nginx
             ;;
@@ -121,7 +120,7 @@ main() {
             exit 1
             ;;
         *)
-            red "Invalid option!"
+            red "Invalid option."
             sleep 1
             ;;
         esac
