@@ -114,19 +114,21 @@ while getopts ":ic" option; do
     esac
 done
 if [ $OPTIND = "1" ]; then
-    while :
-    do
     echo
     green " 1. Install Nginx"
     red " 2. Delete temp files"
     yellow " 0. Exit"
     echo
-    read -p "Enter a number: " num
+    echo -n "Enter a number: "
+    while :
+    do
+    read num
     case "$num" in
         1)  install_nginx ;;
         2)  clean_temp ;;
         0)  exit 0 ;;
-        *)  red "Invalid option." ;;
+        *)  red "Invalid option."
+            echo -n "Enter a number [0-2]: " ;;
     esac
     done
 fi
