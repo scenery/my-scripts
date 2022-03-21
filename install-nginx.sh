@@ -87,12 +87,19 @@ clean_temp() {
 }
 
 main() {
+    if [ $(id -u) != "0" ]; then
+        red "Error: You must be root to run this script."
+        exit 1
+    fi   
+    if [ ! -f /etc/debian_version ]; then
+        red "Error: This script only supports Debian GNU/Linux Operating System."
+        exit 1
+    fi
     clear
     green "+---------------------------------------------------+"
-    green "| Auto Compiling and Installing Nginx-1.20.2        |"
-    green "| Author : Atp <hi@zatp.com>                        |"
+    green "| A tool to auto-compile & install Nginx-1.20.2     |"
+    green "| Author : ATP <hi@zatp.com>                        |"
     green "| Github : https://github.com/scenery/my-scripts    |"
-    green "| **This script only supports Debian GNU/Linux**    |"
     green "+---------------------------------------------------+"
     echo
     green " 1. Install Nginx"
