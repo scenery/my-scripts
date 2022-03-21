@@ -76,6 +76,7 @@ EOF
     green "Nginx Version: 1.20.2"
     green "Openssl Version: 1.1.1m"
     green "Program Path: /etc/nginx/"
+    green "Temp files: /root/nginx-temp"
     green "Status: service nginx status"
     yellow "Total: $SECONDS seconds"
     green "====================================================="
@@ -103,15 +104,15 @@ main() {
     green "+---------------------------------------------------+"
     echo
     green " 1. Install Nginx"
-    red " 2. Delete temp installation files"
+    red " 2. Delete temp files"
     yellow " 0. Exit"
     echo
     read -p "Enter a number: " num
     case "$num" in
-    1)
+    1|-install)
         install_nginx
         ;;
-    2)
+    2|-clean)
         clean_temp
         ;;
     0)
