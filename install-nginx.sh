@@ -26,8 +26,8 @@ install_nginx() {
     # nginx-cache-purge
     # wget https://github.com/FRiCKLE/ngx_cache_purge/archive/2.3.tar.gz
     # tar -zxvf 2.3.tar.gz
-    wget https://www.openssl.org/source/openssl-1.1.1n.tar.gz
-    tar -xzvf openssl-1.1.1n.tar.gz && rm openssl-1.1.1n.tar.gz
+    wget https://www.openssl.org/source/openssl-1.1.1o.tar.gz
+    tar -xzvf openssl-1.1.1o.tar.gz && rm openssl-1.1.1o.tar.gz
     git clone https://github.com/google/ngx_brotli
     cd ngx_brotli && git submodule update --init
     cd /root/nginx-temp
@@ -36,7 +36,7 @@ install_nginx() {
     cd nginx-1.20.2
     ./configure \
         --prefix=/etc/nginx \
-        --with-openssl=../openssl-1.1.1n \
+        --with-openssl=../openssl-1.1.1o \
         --with-openssl-opt='enable-tls1_3' \
         --with-http_v2_module \
         --with-http_ssl_module \
@@ -76,7 +76,7 @@ EOF
     systemctl start nginx.service
     green "================Nginx Install Success================"
     green "Nginx Version: 1.20.2"
-    green "Openssl Version: 1.1.1m"
+    green "Openssl Version: 1.1.1o"
     green "Program Path: /etc/nginx/"
     green "Temp files: /root/nginx-temp"
     green "Status: service nginx status"
