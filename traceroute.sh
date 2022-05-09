@@ -17,7 +17,7 @@ yellow(){
 }
 
 install_besttrace() {
-    apt install zip unzip -y
+    apt install wget zip unzip -y
     mkdir /root/traceroute-temp && cd /root/traceroute-temp
     wget https://cdn.ipip.net/17mon/besttrace4linux.zip
     unzip besttrace4linux.zip
@@ -55,7 +55,7 @@ clean_up() {
 main() {
     green "+-------------------------------------------------+"
     green "| Traceroute to China                             |"
-    green "| Author : Atp <hello@zatp.com>                   |"
+    green "| Author : Atp <hi@zatp.com>                      |"
     green "| Github: https://github.com/scenery/my-scripts   |"
     green "+-------------------------------------------------+"
     echo
