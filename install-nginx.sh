@@ -1,6 +1,6 @@
 #!/bin/bash
 # Written on 2021-09-19 by ATP for personal test
-# Website: https://www.zatp.com
+# Website: https://www.atpx.com
 # Github: https://github.com/scenery/my-scripts
 
 green(){
@@ -26,17 +26,17 @@ install_nginx() {
     # nginx-cache-purge
     # wget https://github.com/FRiCKLE/ngx_cache_purge/archive/2.3.tar.gz
     # tar -zxvf 2.3.tar.gz
-    wget https://www.openssl.org/source/openssl-1.1.1q.tar.gz
-    tar -xzvf openssl-1.1.1q.tar.gz && rm openssl-1.1.1q.tar.gz
+    wget https://www.openssl.org/source/openssl-1.1.1s.tar.gz
+    tar -xzvf openssl-1.1.1s.tar.gz && rm openssl-1.1.1s.tar.gz
     git clone https://github.com/google/ngx_brotli
     cd ngx_brotli && git submodule update --init
     cd /root/nginx-temp
-    wget https://nginx.org/download/nginx-1.22.0.tar.gz
-    tar xf nginx-1.22.0.tar.gz && rm nginx-1.22.0.tar.gz
-    cd nginx-1.22.0
+    wget https://nginx.org/download/nginx-1.22.1.tar.gz
+    tar xf nginx-1.22.1.tar.gz && rm nginx-1.22.1.tar.gz
+    cd nginx-1.22.1
     ./configure \
         --prefix=/etc/nginx \
-        --with-openssl=../openssl-1.1.1q \
+        --with-openssl=../openssl-1.1.1s \
         --with-openssl-opt='enable-tls1_3' \
         --with-http_v2_module \
         --with-http_ssl_module \
@@ -75,8 +75,8 @@ EOF
     systemctl enable nginx.service
     systemctl start nginx.service
     green "================Nginx Install Success================"
-    green "Nginx Version: 1.22.0"
-    green "Openssl Version: 1.1.1q"
+    green "Nginx Version: 1.22.1"
+    green "Openssl Version: 1.1.1s"
     green "Program Path: /etc/nginx/"
     green "Temp files: /root/nginx-temp"
     green "Status: service nginx status"
@@ -104,8 +104,8 @@ if [ ! -f /etc/debian_version ]; then
 fi
 # clear
 green "+---------------------------------------------------+"
-green "| A tool to auto-compile & install Nginx-1.22.0     |"
-green "| Author : ATP <hi@zatp.com>                        |"
+green "| A tool to auto-compile & install Nginx-1.22.1     |"
+green "| Author : ATP <hello@atpx.com>                     |"
 green "| Github : https://github.com/scenery/my-scripts    |"
 green "+---------------------------------------------------+"
 echo
