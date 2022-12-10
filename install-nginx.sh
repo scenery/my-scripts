@@ -38,7 +38,6 @@ install_nginx() {
         --prefix=/etc/nginx \
         --with-openssl=../openssl-1.1.1s \
         --with-openssl-opt='enable-tls1_3' \
-        --with-ipv6 \
         --with-http_v2_module \
         --with-http_ssl_module \
         --with-http_gzip_static_module \
