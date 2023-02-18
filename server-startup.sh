@@ -136,7 +136,7 @@ ssh_keepalive() {
     echo "Your 'sshd_config' file will be update to the following parameters:"
     echo "ClientAliveInterval 45"
     echo "ClientAliveCountMax 5"
-    echo "Still continue? [Y/N]: "
+    echo -n "Still continue? [Y/N]: "
     while : 
     do
     read goupdate
