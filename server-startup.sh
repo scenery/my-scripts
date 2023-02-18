@@ -133,10 +133,10 @@ install_nginx() {
 }
 
 ssh_keepalive() {
-    echo -n "Your 'sshd_config' file will be update to the following parameters:"
-    echo -n "ClientAliveInterval 45"
-    echo -n "ClientAliveCountMax 5"
-    echo -n "Still continue? [Y/N]: "
+    echo "Your 'sshd_config' file will be update to the following parameters:"
+    echo "ClientAliveInterval 45"
+    echo "ClientAliveCountMax 5"
+    echo "Still continue? [Y/N]: "
     while : 
     do
     read goupdate
