@@ -145,6 +145,7 @@ ssh_keepalive() {
             sed -i "/#TCPKeepAlive /c\TCPKeepAlive yes" /etc/ssh/sshd_config
             sed -i "/#ClientAliveInterval /c\ClientAliveInterval 45" /etc/ssh/sshd_config
             sed -i "/#ClientAliveCountMax /c\ClientAliveCountMax 5" /etc/ssh/sshd_config
+            systemctl restart sshd.service
             break ;;
         [Nn][Oo]|[Nn]) 
             break ;;
