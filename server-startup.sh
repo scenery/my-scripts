@@ -1,5 +1,6 @@
 #!/bin/bash
-# Written on 2022-03-21 by ATP
+# Written by ATP on 2022-03-21
+# Website: https://atpx.com
 # Github: https://github.com/scenery/my-scripts
 
 green(){
@@ -92,7 +93,7 @@ change_ssh_port() {
                 systemctl restart sshd.service
                 echo
                 green "The SSH port has been changed to $SSHPORT."
-                green "Please login using that port to test BEFORE ending this session."
+                green "Please login using new port to test BEFORE ending this session."
                 echo "Backup file: '/etc/ssh/sshd_config.backup.$NOW'"
                 echo "Back to menu..."
                 break
@@ -131,6 +132,28 @@ install_nginx() {
     echo "Back to menu..."
 }
 
+ssh_keepalive() {
+    echo -n "Your 'sshd_config' file will be update to the following parameters:"
+    echo -n "ClientAliveInterval 45"
+    echo -n "ClientAliveCountMax 5"
+    echo -n "Still continue? [Y/N]: "
+    while : 
+    do
+    read goupdate
+    case $goupdate in
+        [Yy][Ee][Ss]|[Yy]) 
+            sed -i "/#TCPKeepAlive /c\TCPKeepAlive yes" /etc/ssh/sshd_config
+            sed -i "/#ClientAliveInterval /c\ClientAliveInterval 45" /etc/ssh/sshd_config
+            sed -i "/#ClientAliveCountMax /c\ClientAliveCountMax 5" /etc/ssh/sshd_config
+            break ;;
+        [Nn][Oo]|[Nn]) 
+            break ;;
+        * ) echo -n "Invalid option, still continue? [Y/N]: " ;;
+    esac
+    done
+    echo "Back to menu..."
+}
+
 main() {
     # Check if user is root
     if [ $(id -u) != "0" ]; then
@@ -144,7 +167,7 @@ main() {
     clear
     green "+---------------------------------------------------+"
     green "| Initialization Script for Managing Servers        |"
-    green "| Written by ATP <hi@zatp.com>                      |"
+    green "| Written by ATP <hello@atpx.com>                   |"
     green "| Github : https://github.com/scenery/my-scripts    |"
     green "+---------------------------------------------------+"
     while :
@@ -154,14 +177,16 @@ main() {
         green " 2. Change SSH Port"
         green " 3. Enable TCP BBR"
         green " 4. Install Nginx"
+        green " 5. SSH Keep Alive"
         yellow " 0. Exit"
         echo
-        read -p "Enter your menu choice [0-4]: " num
+        read -p "Enter your menu choice [0-5]: " num
         case "$num" in
         1)  change_hostname ;;
         2)  change_ssh_port ;;
         3)  install_bbr ;;
         4)  install_nginx ;;
+        5)  ssh_keepalive ;;
         0)  echo "Bye~"
             sleep 1
             exit 0 ;;
