@@ -155,6 +155,35 @@ ssh_keepalive() {
     echo "Back to menu..."
 }
 
+colorizing_bash() {
+    echo "Customize Bash Colors in Linux Terminal Prompt"
+    echo "This operation will modify your ‘~/.bashrc’ file"
+    echo -n "Still continue? [Y/N]: "
+    while : 
+    do
+    read goupdate
+    case $goupdate in
+        [Yy][Ee][Ss]|[Yy]) 
+            cat >> ~/.bashrc << EOF
+
+# Customize Bash Colors in Terminal Prompt
+if [ -z "\$PS1" ]; then
+    return
+fi
+alias ls='ls --color=auto'
+alias ll='ls --color=auto -lAF'
+PS1='\[\033[01;31m\]\u\[\033[01;33m\]@\[\033[01;36m\]\h \[\033[01;33m\]\w \[\033[01;35m\]\$ \[\033[00m\]'
+EOF
+            source ~/.bashrc
+            break ;;
+        [Nn][Oo]|[Nn]) 
+            break ;;
+        * ) echo -n "Invalid option, still continue? [Y/N]: " ;;
+    esac
+    done
+    echo "Back to menu..."
+}
+
 main() {
     # Check if user is root
     if [ $(id -u) != "0" ]; then
@@ -179,15 +208,17 @@ main() {
         green " 3. Enable TCP BBR"
         green " 4. Install Nginx"
         green " 5. SSH Keep Alive"
+        green " 6. Colorizing Bash Prompt"
         yellow " 0. Exit"
         echo
-        read -p "Enter your menu choice [0-5]: " num
+        read -p "Enter your menu choice [0-6]: " num
         case "$num" in
         1)  change_hostname ;;
         2)  change_ssh_port ;;
         3)  install_bbr ;;
         4)  install_nginx ;;
         5)  ssh_keepalive ;;
+        6)  colorizing_bash ;;
         0)  echo "Bye~"
             sleep 1
             exit 0 ;;
