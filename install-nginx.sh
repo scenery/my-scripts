@@ -1,6 +1,6 @@
 #!/bin/bash
 # Written on 2021-09-19 by ATP for personal test
-# Website: https://www.atpx.com
+# Website: https://atpx.com
 # Github: https://github.com/scenery/my-scripts
 
 green(){
@@ -31,9 +31,9 @@ install_nginx() {
     git clone https://github.com/google/ngx_brotli
     cd ngx_brotli && git submodule update --init
     cd /root/nginx-temp
-    wget https://nginx.org/download/nginx-1.22.1.tar.gz
-    tar xf nginx-1.22.1.tar.gz && rm nginx-1.22.1.tar.gz
-    cd nginx-1.22.1
+    wget https://nginx.org/download/nginx-1.24.0.tar.gz
+    tar xf nginx-1.24.0.tar.gz && rm nginx-1.24.0.tar.gz
+    cd nginx-1.24.0
     ./configure \
         --prefix=/etc/nginx \
         --with-openssl=../openssl-1.1.1t \
@@ -104,7 +104,7 @@ if [ ! -f /etc/debian_version ]; then
 fi
 # clear
 green "+---------------------------------------------------+"
-green "| A tool to auto-compile & install Nginx-1.22.1     |"
+green "| A tool to auto-compile & install Nginx-1.24.0     |"
 green "| Author : ATP <hello@atpx.com>                     |"
 green "| Github : https://github.com/scenery/my-scripts    |"
 green "+---------------------------------------------------+"
