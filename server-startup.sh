@@ -172,7 +172,7 @@ if [ -z "\$PS1" ]; then
 fi
 alias ls='ls --color=auto'
 alias ll='ls --color=auto -lAF'
-PS1='\[\033[01;31m\]\u\[\033[01;33m\]@\[\033[01;36m\]\h \[\033[01;33m\]\w \[\033[01;35m\]\$ \[\033[00m\]'
+PS1='\[\033[01;31m\]\u\[\033[01;33m\]@\[\033[01;36m\]\h \[\033[01;33m\]\w\[\033[01;35m\]\$ \[\033[00m\]'
 EOF
             source ~/.bashrc
             break ;;
@@ -197,7 +197,7 @@ main() {
     clear
     green "+---------------------------------------------------+"
     green "| Initialization Script for Managing Servers        |"
-    green "| Written by ATP <hello@atpx.com>                   |"
+    green "| Written by ATP <https://atpx.com>                 |"
     green "| Github : https://github.com/scenery/my-scripts    |"
     green "+---------------------------------------------------+"
     while :
