@@ -114,7 +114,7 @@ main() {
         red " 2. Delete temp files"
         yellow " 0. Exit"
         echo
-        read -p "Enter your menu choice [0-6]: " num
+        read -p "Enter your menu choice [0-2]: " num
         case "$num" in
         1)  install_nginx ;;
         2)  clean_temp ;;
