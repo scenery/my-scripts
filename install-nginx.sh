@@ -75,8 +75,6 @@ EOF
     systemctl enable nginx.service
     systemctl start nginx.service
     green "================Nginx Install Success================"
-    green "Nginx Version: 1.22.1"
-    green "Openssl Version: 1.1.1t"
     green "Program Path: /etc/nginx/"
     green "Temp files: /root/nginx-temp"
     green "Status: service nginx status"
@@ -93,48 +91,37 @@ clean_temp() {
     echo
 }
 
-
-if [ $(id -u) != "0" ]; then
-    red "Error: You must be root to run this script."
-    exit 1
-fi   
-if [ ! -f /etc/debian_version ]; then
-    red "Error: This script only supports Debian GNU/Linux Operating System."
-    exit 1
-fi
-# clear
-green "+---------------------------------------------------+"
-green "| A tool to auto-compile & install Nginx-1.24.0     |"
-green "| Author : ATP <hello@atpx.com>                     |"
-green "| Github : https://github.com/scenery/my-scripts    |"
-green "+---------------------------------------------------+"
-echo
-while getopts ":ic" option; do
-    case "${option}" in
-    i)  install_nginx ;;
-    c)  clean_temp ;;
-    \?) echo "Invalid option, you have to use: [-i] or [-c]"
-        echo "-i: Install Nginx"
-        echo "-c: Delete temp files" ;;
-    esac
-done
-if [ $OPTIND = "1" ]; then
+main() {
+    if [ $(id -u) != "0" ]; then
+        red "Error: You must be root to run this script."
+        exit 1
+    fi   
+    if [ ! -f /etc/debian_version ]; then
+        red "Error: This script only supports Debian GNU/Linux Operating System."
+        exit 1
+    fi
+    # clear
+    green "+---------------------------------------------------+"
+    green "| A tool to auto-compile & install Nginx-1.24.0     |"
+    green "| Author : ATP <https://atpx.com>                   |"
+    green "| Github : https://github.com/scenery/my-scripts    |"
+    green "+---------------------------------------------------+"
     echo
-    green " 1. Install Nginx"
-    red " 2. Delete temp files"
-    yellow " 0. Exit"
-    echo
-    echo -n "Enter a number: "
     while :
     do
-    read num
-    case "$num" in
+        echo
+        green " 1. Install Nginx"
+        red " 2. Delete temp files"
+        yellow " 0. Exit"
+        echo
+        read -p "Enter your menu choice [0-6]: " num
+        case "$num" in
         1)  install_nginx ;;
         2)  clean_temp ;;
         0)  exit 0 ;;
-        *)  red "Invalid option."
-            echo -n "Enter a number [0-2]: " ;;
-    esac
+        *)  red "Error: Invalid number." ;;
+        esac
     done
-fi
+}
 
+main
