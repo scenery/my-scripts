@@ -53,7 +53,7 @@ install_nginx() {
         --with-stream \
         --with-stream_ssl_module \
         --with-stream_ssl_preread_module \
-        --add-module=../ngx_brotli
+        --add-module=../ngx_brotli \
         --add-module=../nginx-dav-ext-module
     make && make install
     
