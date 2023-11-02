@@ -26,7 +26,7 @@ install_nginx() {
     sleep 1
     NOW=$(date +"%Y-%m-%d")
     apt update
-    apt install -y build-essential libpcre3 libpcre3-dev zlib1g zlib1g-dev cmake curl git wget
+    apt install -y build-essential libpcre3 libpcre3-dev zlib1g zlib1g-dev cmake curl git wget openssl
     mkdir /etc/nginx
     mkdir /etc/nginx/conf.d
     mkdir -p $NGXBUILD && cd $NGXBUILD
