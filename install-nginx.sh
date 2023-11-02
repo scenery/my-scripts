@@ -3,9 +3,11 @@
 # Website: https://atpx.com
 # Github: https://github.com/scenery/my-scripts
 
-NGXSTABLE=$(curl -s https://nginx.org/packages/debian/pool/nginx/n/nginx/ | grep '"nginx_' | sed -n "s/^.*\">nginx_\(.*\)\~.*$/\1/p" |sort -Vr |head -1| cut -d'-' -f1)
-NGXVER="nginx-"$NGXSTABLE
-NGXBUILD=/home/nginx-build-temp
+NGX_STABLE=$(curl -s https://nginx.org/packages/debian/pool/nginx/n/nginx/ | grep '"nginx_' | sed -n "s/^.*\">nginx_\(.*\)\~.*$/\1/p" |sort -Vr |head -1| cut -d'-' -f1)
+NGX_VER="nginx-"$NGX_STABLE
+NGX_BUILD_PATH=/home/nginx-build-temp
+NGX_PATH=/etc/nginx
+OPENSSL_VER=`curl -s https://api.github.com/repos/openssl/openssl/releases/latest | grep tag_name | cut -f4 -d "\""`
 
 green(){
     echo -e "\033[32m\033[01m$1\033[0m"
@@ -18,31 +20,26 @@ yellow(){
 }
 
 install_nginx() {
-    if [ -d "$NGXBUILD" ]; then
-        rm -rf $NGXBUILD
+    if [ -d "${NGX_BUILD_PATH}" ]; then
+        rm -rf ${NGX_BUILD_PATH}
     fi
     SECONDS=0
     green "================Start Installing Nginx==============="
-    sleep 1
-    NOW=$(date +"%Y-%m-%d")
     apt update
-    apt install -y build-essential libpcre3 libpcre3-dev zlib1g zlib1g-dev cmake curl git wget openssl
-    mkdir /etc/nginx
-    mkdir /etc/nginx/conf.d
-    mkdir -p $NGXBUILD && cd $NGXBUILD
-    wget https://nginx.org/download/$NGXVER.tar.gz
-    tar -xzvf $NGXVER.tar.gz && rm $NGXVER.tar.gz
-    git clone https://github.com/arut/nginx-dav-ext-module
-    git clone --recurse-submodules -j8 https://github.com/google/ngx_brotli
-    cd ngx_brotli/deps/brotli
-    mkdir out && cd out
-    cmake -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=OFF -DCMAKE_C_FLAGS="-Ofast -m64 -march=native -mtune=native -flto -funroll-loops -ffunction-sections -fdata-sections -Wl,--gc-sections" -DCMAKE_CXX_FLAGS="-Ofast -m64 -march=native -mtune=native -flto -funroll-loops -ffunction-sections -fdata-sections -Wl,--gc-sections" -DCMAKE_INSTALL_PREFIX=./installed ..
-    cmake --build . --config Release --target brotlienc
-    cd $NGXBUILD/$NGXVER
-    export CFLAGS="-m64 -march=native -mtune=native -Ofast -flto -funroll-loops -ffunction-sections -fdata-sections -Wl,--gc-sections"
-    export LDFLAGS="-m64 -Wl,-s -Wl,-Bsymbolic -Wl,--gc-sections"
+    apt install -y build-essential libpcre3 libpcre3-dev libxslt1-dev libbrotli-dev zlib1g zlib1g-dev cmake curl git wget
+    mkdir ${NGX_PATH}
+    mkdir ${NGX_PATH}/conf.d
+    mkdir -p ${NGX_BUILD_PATH} && cd ${NGX_BUILD_PATH}
+    wget https://nginx.org/download/${NGX_VER}.tar.gz
+    tar -xzvf ${NGX_VER}.tar.gz && rm ${NGX_VER}.tar.gz
+    wget https://github.com/openssl/openssl/releases/download/${OPENSSL_VER}/${OPENSSL_VER}.tar.gz
+    tar -xzvf ${OPENSSL_VER}.tar.gz && rm ${OPENSSL_VER}.tar.gz
+    git clone --recursive https://github.com/google/ngx_brotli.git
+    git clone https://github.com/arut/nginx-dav-ext-module.git
+    cd ${NGX_BUILD_PATH}/${NGX_VER}
     ./configure \
-        --prefix=/etc/nginx \
+        --prefix=${NGX_PATH} \
+        --with-openssl=../${OPENSSL_VER} \
         --with-http_v2_module \
         --with-http_ssl_module \
         --with-http_gzip_static_module \
@@ -57,7 +54,7 @@ install_nginx() {
         --add-module=../nginx-dav-ext-module
     make && make install
     
-cat > /lib/systemd/system/nginx.service <<-EOF
+    cat > /lib/systemd/system/nginx.service << EOF
 [Unit]
 Description=Nginx - High Performance Web Server
 Documentation=http://nginx.org/en/docs/
@@ -66,11 +63,10 @@ Wants=network-online.target
  
 [Service]
 Type=forking
-ExecStartPre=/etc/nginx/sbin/nginx -t -c /etc/nginx/conf/nginx.conf
-ExecStart=/etc/nginx/sbin/nginx -c /etc/nginx/conf/nginx.conf
-ExecReload=/bin/kill -s HUP $MAINPID
-ExecStop=/bin/kill -s TERM $MAINPID
-ExecStopPost=/bin/rm -f /run/nginx.pid
+ExecStartPre=${NGX_PATH}/sbin/nginx -t -c ${NGX_PATH}/conf/nginx.conf
+ExecStart=${NGX_PATH}/sbin/nginx -c ${NGX_PATH}/conf/nginx.conf
+ExecReload=${NGX_PATH}/sbin/nginx -s reload
+ExecStop=${NGX_PATH}/sbin/nginx -s stop
 PrivateTmp=true
  
 [Install]
@@ -80,20 +76,27 @@ EOF
     systemctl daemon-reload
     systemctl enable nginx.service
     systemctl start nginx.service
-    ln -s /etc/nginx/sbin/nginx /usr/local/bin
-    /etc/nginx/sbin/nginx -V
+    if [ -L "/usr/local/bin/nginx" ]; then
+        yellow "Old Nginx symbolic link exists. Cancell the link"
+        rm /usr/local/bin/nginx
+    fi
+    yellow "Set up Nginx symbolic link"
+    ln -s /etc/nginx/sbin/nginx /usr/local/bin/nginx
+    chmod +x /usr/local/bin/nginx
+    nginx -V
     green "================Nginx Install Success================"
+    green "Version: ${NGX_VER} with ${OPENSSL_VER}"
     green "Program Path: /etc/nginx/"
-    green "Temp files: $NGXBUILD"
+    green "Temp files: ${NGX_BUILD_PATH}"
     green "Status: service nginx status"
-    yellow "Total: $SECONDS seconds"
+    yellow "Total: ${SECONDS} seconds"
     green "====================================================="
 }
 
 clean_temp() {
     echo
-    if [ -d "$NGXBUILD" ]; then
-        rm -rf $NGXBUILD
+    if [ -d "${NGX_BUILD_PATH}" ]; then
+        rm -rf ${NGX_BUILD_PATH}
     fi
     green "Cleanup done!"
     echo
@@ -110,7 +113,7 @@ main() {
     fi
     # clear
     green "+---------------------------------------------------+"
-    green "| A tool to auto-compile & install $NGXVER     |"
+    green "| A tool to auto-compile & install ${NGX_VER}     |"
     green "| Author : ATP <https://atpx.com>                   |"
     green "| Github : https://github.com/scenery/my-scripts    |"
     green "+---------------------------------------------------+"
