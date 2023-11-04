@@ -53,8 +53,8 @@ install_nginx() {
         --add-module=../ngx_brotli \
         --add-module=../nginx-dav-ext-module
     make && make install
-    
-    cat > /lib/systemd/system/nginx.service << EOF
+    echo "Installing Nginx systemd service..."
+    cat > /etc/systemd/system/nginx.service << EOF
 [Unit]
 Description=Nginx - High Performance Web Server
 Documentation=http://nginx.org/en/docs/
@@ -84,13 +84,12 @@ EOF
     ln -s /etc/nginx/sbin/nginx /usr/local/bin/nginx
     chmod +x /usr/local/bin/nginx
     nginx -V
-    green "================Nginx Install Success================"
+    green "Done!"
     green "Version: ${NGX_VER} with ${OPENSSL_VER}"
     green "Program Path: /etc/nginx/"
     green "Temp files: ${NGX_BUILD_PATH}"
     green "Status: service nginx status"
     yellow "Total: ${SECONDS} seconds"
-    green "====================================================="
 }
 
 clean_temp() {
