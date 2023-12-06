@@ -99,7 +99,8 @@ issue_cert(){
     green "您选择的 CA 机构: $cert_provider"
     acme.sh --config-home $acme_sh_home --set-default-ca --server $cert_provider
     if [ "$cert_provider" == "zerossl" ]; then
-        echo "使用 ZeroSSL 需要注册账号，建议前往官网 (https://app.zerossl.com/signup) 免费注册一个账号方便管理证书"
+        echo
+        echo "使用 ZeroSSL 需要注册账号，建议前往官网 (https://app.zerossl.com/signup) 免费注册一个账号方便以后管理证书"
         while true; do
             read -p "如果您已经有 ZeroSSL 账号，请输入邮箱: " zerossl_mail
             echo "您输入的邮箱是: $zerossl_mail"
@@ -113,9 +114,11 @@ issue_cert(){
             fi
         done
     elif [ "$cert_provider" == "google" ]; then
-        read -p "请参考文章 (https://atpx.com/blog/issue-free-google-public-cert/) 前往 Google Cloud Platform 获取 b64MacKey 和 keyId 并完成 API 注册 (每台服务器仅需注册一次)，如果您确认已经完成该步骤将进行下一步，否则将退出脚本，是否完成? (y/n): " confirm
+        echo
+        read -p "* 请参考文章 (https://atpx.com/blog/issue-free-google-public-cert/) 前往 Google Cloud Platform 获取 b64MacKey 和 keyId 并完成 API 注册 (每台服务器仅需注册一次)，如果您确认已经完成该步骤将进行下一步，否则将退出脚本，是否完成? (y/n): " confirm
         if [[ ! $confirm =~ ^[Yy]$ ]]; then
-            yellow "即将退出脚本，请完成 API 注册后重新运行或者选择其它证书颁发机构。"
+            yellow "退出脚本，请完成 API 注册后重新运行该脚本或者选择使用其它证书颁发机构。"
+            echo
             sleep 1
             exit 0
         fi
