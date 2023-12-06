@@ -10,6 +10,7 @@ _Notice: All scripts are use for personal test in single environment (most of th
 * [Install Nginx](#install-nginx)
 * [Traceroute](#traceroute)
 * [Unblock Netflix Check](#check-netflix)
+* [Issue SSL Cert](#acme-cert)
 
 ## Usage
 
@@ -54,5 +55,12 @@ bash <(curl -Ls https://raw.githubusercontent.com/scenery/my-scripts/main/tracer
 A easy and fast script to check if your IPv4 and IPv6 address can unblock Netflix streaming.
 ```
 bash <(curl -Ls https://raw.githubusercontent.com/scenery/my-scripts/main/check-netflix.sh)
+```
+
+### acme-cert
+
+A tool to issue SSL certs using acme.sh with DNS API.
+```
+bash <(curl -Ls https://raw.githubusercontent.com/scenery/my-scripts/main/acme-cert.sh)
 ```
 
