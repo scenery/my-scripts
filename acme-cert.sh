@@ -99,13 +99,13 @@ issue_cert(){
     green "您选择的 CA 机构: $cert_provider"
     acme.sh --config-home $acme_sh_home --set-default-ca --server $cert_provider
     if [ "$cert_provider" == "zerossl" ]; then
-        echo "使用 ZeroSSL 需要注册账号，您可以去官网 (https://app.zerossl.com/signup) 免费注册"
+        echo "使用 ZeroSSL 需要注册账号，建议前往官网 (https://app.zerossl.com/signup) 免费注册一个账号方便管理证书"
         while true; do
             read -p "如果您已经有 ZeroSSL 账号，请输入邮箱: " zerossl_mail
             echo "您输入的邮箱是: $zerossl_mail"
             read -p "是否正确? (y/n): " confirm
             if [[ "$confirm" =~ ^[Yy]$ ]]; then
-                acme.sh --register-account -m $zerossl_mail
+                acme.sh --config-home $acme_sh_home --register-account -m $zerossl_mail
                 break
             else
                 echo "请重新输入。"
@@ -149,7 +149,8 @@ issue_cert(){
         for domain in "${domains[@]}"; do
             formatted_domains+=" -d $domain"
         done
-        echo "格式化后的域名列表:$formatted_domains"
+        echo "格式化后的域名列表应类似于: -d example.com -d *.example.com"
+        echo "当前域名列表为:$formatted_domains"
         read -p "是否正确? (y/n): " confirm
         if [[ $confirm =~ ^[Yy]$ ]]; then
             echo
