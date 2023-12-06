@@ -45,7 +45,6 @@ issue_cert(){
         acme_sh_home="$ACME_SH_PATH"
     fi
     green "您选择的 --config-home 路径为: $acme_sh_home"
-    echo
 
     while true; do
         echo
@@ -70,10 +69,10 @@ issue_cert(){
     while true; do
         echo "请选择证书颁发机构: "
         echo "1. Let's Encrypt"
-        echo "2. ZeroSSL"
-        echo "3. Google Trust Services"
+        echo "2. ZeroSSL (需要注册 ZeroSSL 账号)"
+        echo "3. Google Trust Services (需要申请内测)"
         echo "4. 退出"
-        read -p "输入相应的数字(1-4): " choice
+        read -p "输入相应的数字 (1-4): " choice
         case $choice in
             1)
                 cert_provider="letsencrypt"
@@ -99,6 +98,28 @@ issue_cert(){
     done
     green "您选择的 CA 机构: $cert_provider"
     acme.sh --config-home $acme_sh_home --set-default-ca --server $cert_provider
+    if [ "$cert_provider" == "zerossl" ]; then
+        echo "使用 ZeroSSL 需要注册账号，您可以去官网 (https://app.zerossl.com/signup) 免费注册"
+        while true; do
+            read -p "如果您已经有 ZeroSSL 账号，请输入邮箱: " zerossl_mail
+            echo "您输入的邮箱是: $zerossl_mail"
+            read -p "是否正确? (y/n): " confirm
+            if [[ "$confirm" =~ ^[Yy]$ ]]; then
+                acme.sh --register-account -m $zerossl_mail
+                break
+            else
+                echo "请重新输入。"
+                echo
+            fi
+        done
+    elif [ "$cert_provider" == "google" ]; then
+        read -p "请参考文章 (https://atpx.com/blog/issue-free-google-public-cert/) 前往 Google Cloud Platform 获取 b64MacKey 和 keyId 并完成 API 注册 (每台服务器仅需注册一次)，如果您确认已经完成该步骤将进行下一步，否则将退出脚本，是否完成? (y/n): " confirm
+        if [[ ! $confirm =~ ^[Yy]$ ]]; then
+            yellow "即将退出脚本，请完成 API 注册后重新运行或者选择其它证书颁发机构。"
+            sleep 1
+            exit 0
+        fi
+    fi
 
     while true; do
         echo
@@ -107,8 +128,7 @@ issue_cert(){
         echo -e "./acme.sh --issue --dns \033[32m\033[01mdns_cf\033[0m -d example.com -d '*.example.com'"
         echo "则对应的 DNS API 名称为: dns_cf"
         read -p "请输入: " dns_api_name
-        echo "您输入的为: $dns_api_name"
-        read -p "请再次确认，错误将会导致证书签发失败，是否正确? (y/n): " confirm
+        read -p "您输入的为: $dns_api_name，错误的名称将导致证书签发失败，是否正确? (y/n): " confirm
         if [[ $confirm =~ ^[Yy]$ ]]; then
             dns_name="$dns_api_name"
             break
