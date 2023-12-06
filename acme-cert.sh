@@ -48,6 +48,26 @@ issue_cert(){
     echo
 
     while true; do
+        echo
+        read -p "请输入证书安装路径 (绝对路径): " install_path
+        if [[ $install_path != /* ]]; then
+            red "路径必须是绝对路径，请重新输入。"
+            continue
+        fi
+        if [ ! -d "$install_path" ]; then
+            read -p "路径 $install_path 不存在，是否创建? (y/n): " create_path
+            if [[ $create_path =~ ^[Yy]$ ]]; then
+                mkdir -p "$install_path"
+                echo "路径已创建。"
+            else
+                yellow "请重新输入证书安装路径。"
+                continue
+            fi
+        fi
+        break
+    done
+
+    while true; do
         echo "请选择证书颁发机构: "
         echo "1. Let's Encrypt"
         echo "2. ZeroSSL"
@@ -82,22 +102,19 @@ issue_cert(){
 
     while true; do
         echo
-        read -p "请输入证书安装路径 (绝对路径): " install_path
-        if [[ $install_path != /* ]]; then
-            red "路径必须是绝对路径，请重新输入。"
+        echo "请输入 DNS API 名称，对应你的 DNS 服务商，参考文档: https://github.com/acmesh-official/acme.sh/wiki/dnsapi"
+        echo "例如文档中 1. Cloudflare 签发命令为: "
+        echo -e "./acme.sh --issue --dns \033[32m\033[01mdns_cf\033[0m -d example.com -d '*.example.com'"
+        echo "则对应的 DNS API 名称为: dns_cf"
+        read -p "请输入: " dns_api_name
+        echo "您输入的为: $dns_api_name"
+        read -p "请再次确认，错误将会导致证书签发失败，是否正确? (y/n): " confirm
+        if [[ $confirm =~ ^[Yy]$ ]]; then
+            dns_name="$dns_api_name"
+            break
+        else
             continue
         fi
-        if [ ! -d "$install_path" ]; then
-            read -p "路径 $install_path 不存在，是否创建? (y/n): " create_path
-            if [[ $create_path =~ ^[Yy]$ ]]; then
-                mkdir -p "$install_path"
-                echo "路径已创建。"
-            else
-                yellow "请重新输入证书安装路径。"
-                continue
-            fi
-        fi
-        break
     done
 
     while true; do
@@ -117,7 +134,7 @@ issue_cert(){
         if [[ $confirm =~ ^[Yy]$ ]]; then
             echo
             echo "正在申请签发 RAS 证书..."
-            acme.sh --config-home $acme_sh_home --issue --dns dns_cf $formatted_domains --keylength 2048
+            acme.sh --config-home $acme_sh_home --issue --dns $dns_name $formatted_domains --keylength 2048
             acme.sh --config-home $acme_sh_home \
                 --install-cert -d $cert_name \
                 --key-file       $install_path/${cert_name}_private.key  \
@@ -127,7 +144,7 @@ issue_cert(){
             echo
             read -p "是否继续安装 ECC 证书? (y/n): " confirm
             if [[ $confirm =~ ^[Yy]$ ]]; then
-                acme.sh --config-home $acme_sh_home --issue --dns dns_cf $formatted_domains --keylength ec-256
+                acme.sh --config-home $acme_sh_home --issue --dns $dns_name $formatted_domains --keylength ec-256
                 acme.sh --config-home $acme_sh_home \
                     --install-cert -d $cert_name --ecc \
                     --key-file       $install_path/ecc_${cert_name}_private.key  \
@@ -155,10 +172,12 @@ main(){
     echo "export CF_Token=\"xxxxxx\""
     echo "export CF_Account_ID=\"xxxxxx\""
     echo "export CF_Zone_ID=\"xxxxxx\""
+    echo "DNS API 获取及使用方式请参考文档: https://github.com/acmesh-official/acme.sh/wiki/dnsapi"
     read -p "是否已经导入? (y/n): " answer
     if [ "$answer" == "y" ]; then
         if [ -d "$ACME_SH_PATH" ]; then
             green "acme.sh 已安装在 $ACME_SH_PATH"
+            export PATH="$PATH:$HOME/.acme.sh"
         else
             yellow "未检测到 acme.sh 目录"
             echo "开始安装 acme.sh"
