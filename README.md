@@ -30,7 +30,7 @@ bash <(curl -Ls https://raw.githubusercontent.com/scenery/my-scripts/main/server
 
 ### install-nginx
 
-Auto compiling and installing latest [Nginx](https://nginx.org/en/download.html) (Stable version) and [OpenSSL](https://www.openssl.org/source/).
+Auto compiling and installing the latest [Nginx](https://nginx.org/en/download.html) with [OpenSSL](https://www.openssl.org/source/) or [LibreSSL](https://www.libressl.org/).
 ```
 bash <(curl -Ls git.io/nginx.sh)
 ```
