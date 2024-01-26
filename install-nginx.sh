@@ -19,6 +19,9 @@ yellow(){
 nginx_stable() {
     local ngx_latest=$(curl -s https://nginx.org/packages/debian/pool/nginx/n/nginx/ | grep '"nginx_' | sed -n "s/^.*\">nginx_\(.*\)\~.*$/\1/p" | sort -Vr | head -1 | cut -d'-' -f1)
     NGX_VER="nginx-${ngx_latest}"
+    wget https://nginx.org/download/${NGX_VER}.tar.gz -O "${BUILD_DIR}/${NGX_VER}.tar.gz"
+    mkdir -p "${BUILD_DIR}/${NGX_VER}"
+    tar -xzvf "${BUILD_DIR}/${NGX_VER}.tar.gz" --directory="${BUILD_DIR}/${NGX_VER}" --strip-components 1
     SSL_VER=`curl -s https://api.github.com/repos/openssl/openssl/releases/latest | grep tag_name | cut -f4 -d "\""`
     SSL_NAME="openssl-${SSL_VER}"
     wget "https://github.com/openssl/openssl/releases/download/${SSL_VER}/${SSL_VER}.tar.gz" -O "${BUILD_DIR}/${SSL_NAME}.tar.gz"
