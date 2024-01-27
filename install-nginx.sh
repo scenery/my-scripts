@@ -17,7 +17,7 @@ yellow(){
     echo -e "\033[33m\033[01m$1\033[0m"
 }
 
-nginx_stable() {
+ngx_stable() {
     local ngx_latest=$(curl -s https://nginx.org/packages/debian/pool/nginx/n/nginx/ | grep '"nginx_' | sed -n "s/^.*\">nginx_\(.*\)\~.*$/\1/p" | sort -Vr | head -1 | cut -d'-' -f1)
     NGX_VER="nginx-${ngx_latest}"
     wget https://nginx.org/download/${NGX_VER}.tar.gz -O "${BUILD_DIR}/${NGX_VER}.tar.gz"
@@ -28,20 +28,46 @@ nginx_stable() {
     wget "https://github.com/openssl/openssl/releases/download/${SSL_VER}/${SSL_VER}.tar.gz" -O "${BUILD_DIR}/${SSL_NAME}.tar.gz"
     mkdir -p "${BUILD_DIR}/${SSL_NAME}"
     tar -xzvf "${BUILD_DIR}/${SSL_NAME}.tar.gz" --directory="${BUILD_DIR}/${SSL_NAME}" --strip-components 1
+    # Download bortli
     git clone --recursive https://github.com/google/ngx_brotli.git ${BUILD_DIR}/ngx_brotli
     cd ${BUILD_DIR}/${NGX_VER}
-    ./configure --prefix=${NGX_PATH} \
+    ./configure $NGX_CONFIGURE \
         --with-openssl=${BUILD_DIR}/${SSL_NAME} \
-        --with-http_v2_module \
-        --with-http_ssl_module \
-        --with-http_gzip_static_module \
-        --with-http_stub_status_module \
-        --with-http_sub_module \
-        --with-http_realip_module \
-        --with-stream \
-        --with-stream_ssl_module \
-        --with-stream_ssl_preread_module \
-        --add-module=${BUILD_DIR}/ngx_brotli || { red "Error: Configuration Nginx failed."; exit 1; }
+        || { red "Error: Configuration Nginx failed."; exit 1; }
+}
+
+ngx_mainline() {
+    local ngx_latest=$(curl -s https://nginx.org/packages/mainline/debian/pool/nginx/n/nginx/ | grep '"nginx_' | sed -n "s/^.*\">nginx_\(.*\)\~.*$/\1/p" | sort -Vr | head -1 | cut -d'-' -f1)
+    NGX_VER="nginx-${ngx_latest}"
+    wget https://nginx.org/download/${NGX_VER}.tar.gz -O "${BUILD_DIR}/${NGX_VER}.tar.gz"
+    mkdir -p "${BUILD_DIR}/${NGX_VER}"
+    tar -xzvf "${BUILD_DIR}/${NGX_VER}.tar.gz" --directory="${BUILD_DIR}/${NGX_VER}" --strip-components 1
+    # Download bortli
+    git clone --recursive https://github.com/google/ngx_brotli.git ${BUILD_DIR}/ngx_brotli
+}
+
+ngx_mainline_bs() {
+    ngx_mainline
+    SSL_NAME="boringssl"
+    # Check dependencies
+    local DEPENDENCIES="libssl-dev golang"
+    for dep in ${DEPENDENCIES}; do
+        if ! dpkg -s $dep >/dev/null 2>&1; then
+            echo "Installing $dep..."
+            apt install -y $dep
+        fi
+    done
+    # Build BoringSSL
+    git clone --depth=1 https://github.com/google/boringssl.git ${BUILD_DIR}/boringssl
+    mkdir -p ${BUILD_DIR}/boringssl/build && cd ${BUILD_DIR}/boringssl/build
+    cmake ..
+    make -j$CPU_COUNT || { red "Error: Compilation BoringSSL failed."; exit 1; }
+    cd ${BUILD_DIR}/${NGX_VER}
+    ./configure $NGX_CONFIGURE \
+        --with-http_v3_module \
+        --with-cc-opt="-I${BUILD_DIR}/boringssl/include" \
+        --with-ld-opt="-L${BUILD_DIR}/boringssl/build/ssl  -L${BUILD_DIR}/boringssl/build/crypto" \
+        || { red "Error: Configuration Nginx failed."; exit 1; }
 }
 
 install_libressl() {
@@ -62,12 +88,8 @@ install_libressl() {
     make install || { red "Error: Installation LibreSSL failed."; exit 1; }
 }
 
-nginx_mainline() {
-    local ngx_latest=$(curl -s https://nginx.org/packages/mainline/debian/pool/nginx/n/nginx/ | grep '"nginx_' | sed -n "s/^.*\">nginx_\(.*\)\~.*$/\1/p" | sort -Vr | head -1 | cut -d'-' -f1)
-    NGX_VER="nginx-${ngx_latest}"
-    wget https://nginx.org/download/${NGX_VER}.tar.gz -O "${BUILD_DIR}/${NGX_VER}.tar.gz"
-    mkdir -p "${BUILD_DIR}/${NGX_VER}"
-    tar -xzvf "${BUILD_DIR}/${NGX_VER}.tar.gz" --directory="${BUILD_DIR}/${NGX_VER}" --strip-components 1
+ngx_mainline_ls() {
+    ngx_mainline
     SSL_URL="https://ftp.openbsd.org/pub/OpenBSD/LibreSSL/"
     SSL_PATH="/usr/local/libressl"
     local pattern="libressl-[0-9]+\.[0-9]+\.[0-9]+\.tar\.gz"
@@ -98,22 +120,12 @@ nginx_mainline() {
         yellow "LibreSSL is not installed, installing now..."
         install_libressl
     fi
-    git clone --recursive https://github.com/google/ngx_brotli.git ${BUILD_DIR}/ngx_brotli
     cd ${BUILD_DIR}/${NGX_VER}
-    ./configure --prefix=${NGX_PATH} \
-        --with-http_v2_module \
+    ./configure $NGX_CONFIGURE \
         --with-http_v3_module \
-        --with-http_ssl_module \
-        --with-http_gzip_static_module \
-        --with-http_stub_status_module \
-        --with-http_sub_module \
-        --with-http_realip_module \
-        --with-stream \
-        --with-stream_ssl_module \
-        --with-stream_ssl_preread_module \
-        --add-module=${BUILD_DIR}/ngx_brotli \
         --with-cc-opt="-I${SSL_PATH}/include" \
-        --with-ld-opt="-L${SSL_PATH}/lib -static" || { red "Error: Configuration Nginx failed."; exit 1; }
+        --with-ld-opt="-L${SSL_PATH}/lib -static" \
+        || { red "Error: Configuration Nginx failed."; exit 1; }
 }
 
 install_nginx() {
@@ -130,27 +142,44 @@ install_nginx() {
     # Create dir
     mkdir -p ${NGX_PATH}
     mkdir -p ${NGX_PATH}/conf.d
-    mkdir -p ${BUILD_DIR} && cd ${BUILD_DIR}
+    mkdir -p ${BUILD_DIR}
+    # Nginx configure
+    NGX_CONFIGURE="--prefix=${NGX_PATH} \
+        --add-module=${BUILD_DIR}/ngx_brotli \
+        --with-http_v2_module \
+        --with-http_ssl_module \
+        --with-http_gzip_static_module \
+        --with-http_stub_status_module \
+        --with-http_sub_module \
+        --with-http_realip_module \
+        --with-stream \
+        --with-stream_ssl_module \
+        --with-stream_ssl_preread_module"
     echo
-    green "Please choose the Nginx version you want to install"
+    green "Please choose the Nginx version you would like to install: "
     # Choose version
     while :
     do
         echo
-        green "  1. Stable (with the latest OpenSSL)"
-        green "  2. Mainline (with the latest LibreSSL and HTTP/3 support)"
+        green "  1. Stable (with OpenSSL)"
+        green "  2. Mainline (with BoringSSL and HTTP/3 support)"
+        green "  3. Mainline (with LibreSSL and HTTP/3 support)"
         yellow "  0. Exit"
         echo
-        read -p "Enter your menu choice [0-2]: " num
+        read -p "Enter your menu choice [0-3]: " num
         case "${num}" in
-            1)  nginx_stable 
+            1)  ngx_stable 
                 break ;;
-            2)  nginx_mainline 
+            2)  ngx_mainline_bs
+                break ;;
+            3)  ngx_mainline_ls
                 break ;;
             0)  exit 0 ;;
             *)  red "Error: Invalid number." ;;
         esac
     done
+    # Build nginx
+    cd ${BUILD_DIR}/${NGX_VER}
     make -j$CPU_COUNT || { red "Error: Compilation Nginx failed."; exit 1; }
     make install || { red "Error: Installation Nginx failed."; exit 1; }
     green "Nginx successfully installed."
@@ -217,7 +246,6 @@ main() {
     green "| Author : ATP <https://atpx.com>                             |"
     green "| Github : https://github.com/scenery/my-scripts              |"
     green "+-------------------------------------------------------------+"
-    echo
     while :
     do
         echo
@@ -229,8 +257,7 @@ main() {
         case "${num}" in
         1)  install_nginx ;;
         2)  clean_temp 
-            green "Cleanup done!"
-            echo ;;
+            green "Temp file cleanup completed." ;;
         0)  exit 0 ;;
         *)  red "Error: Invalid number." ;;
         esac
