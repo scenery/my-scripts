@@ -1,22 +1,20 @@
 # My Scripts
 
-Some useful scripts written by myself, but I have no idea what they are :-)
+A collection of personally developed scripts, though I'm not entirely sure what they do. #° 3°#
 
-_Notice: All scripts are use for personal test in single environment (most of them will only run on Debian GNU/Linux) that means it may not be suitable for all people. You must know what you're doing before run them._
+_Note: These scripts are intended for individual testing purposes in a controlled environment (most of them will only work on Debian). This means they may not be suitable for everyone. Please be sure you understand their functionality before running them._
 
 ## Table of contents
 
 * [Server Startup](#server-startup)
 * [Install Nginx](#install-nginx)
-* [Traceroute](#traceroute)
-* [Unblock Netflix Check](#check-netflix)
 * [Issue SSL Cert](#acme-cert)
 
 ## Usage
 
 ### server-startup
 
-An initialization script for managing newly deployed cloud servers. This script can help me to automate the tasks I have to set up again and again when booting up a new host.
+An initialization script for efficiently managing newly deployed hosting servers. This script automates repetitive tasks that I need to perform each time I bring up a new one.
 
 ```
 bash <(curl -Ls https://raw.githubusercontent.com/scenery/my-scripts/main/server-startup.sh)
@@ -31,6 +29,7 @@ bash <(curl -Ls https://raw.githubusercontent.com/scenery/my-scripts/main/server
 ### install-nginx
 
 Auto compiling and installing the latest [Nginx](https://nginx.org). You can choose to install the stable version with [OpenSSL](https://www.openssl.org/source/) or the mainline version with [BoringSSL](https://boringssl.googlesource.com/boringssl) / [LibreSSL](https://www.libressl.org/).
+
 ```
 bash <(curl -Ls git.io/nginx.sh)
 ```
@@ -39,9 +38,18 @@ or
 bash <(curl -Ls https://raw.githubusercontent.com/scenery/my-scripts/main/install-nginx.sh)
 ```
 
-### traceroute
+### acme-cert
 
-A simple tool to test traceroute from your VPS/Server to Mainland China, powered by Besttrace (ipip.net).
+A tool designed for issuing SSL certificates using acme.sh with DNS API integration.
+
+```
+bash <(curl -Ls https://raw.githubusercontent.com/scenery/my-scripts/main/acme-cert.sh)
+```
+
+### ~~traceroute~~
+
+_No longer maintained._
+
 ```
 bash <(curl -Ls git.io/traceroute.sh)
 ```
@@ -50,17 +58,12 @@ or
 bash <(curl -Ls https://raw.githubusercontent.com/scenery/my-scripts/main/traceroute.sh)
 ```
 
-### check-netflix
+### ~~check-netflix~~
 
-A easy and fast script to check if your IPv4 and IPv6 address can unblock Netflix streaming.
+_No longer maintained._
+
 ```
 bash <(curl -Ls https://raw.githubusercontent.com/scenery/my-scripts/main/check-netflix.sh)
 ```
 
-### acme-cert
-
-A tool to issue SSL certs using acme.sh with DNS API.
-```
-bash <(curl -Ls https://raw.githubusercontent.com/scenery/my-scripts/main/acme-cert.sh)
-```
 
