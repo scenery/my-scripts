@@ -5,6 +5,7 @@
 
 BUILD_DIR=/tmp/nginx-build
 NGX_PATH=/etc/nginx
+CPU_COUNT=$(nproc)
 
 green(){
     echo -e "\033[32m\033[01m$1\033[0m"
@@ -44,12 +45,20 @@ nginx_stable() {
 }
 
 install_libressl() {
+    # Check dependencies
+    local DEPENDENCIES="autoconf libtool perl"
+    for dep in ${DEPENDENCIES}; do
+        if ! dpkg -s $dep >/dev/null 2>&1; then
+            echo "Installing $dep..."
+            apt install -y $dep
+        fi
+    done
     wget "${SSL_URL}/${SSL_NAME}.tar.gz" -O "${BUILD_DIR}/${SSL_NAME}.tar.gz"
     mkdir -p "${BUILD_DIR}/${SSL_NAME}"
     tar -xzvf "${BUILD_DIR}/${SSL_NAME}.tar.gz" --directory="${BUILD_DIR}/${SSL_NAME}" --strip-components 1
     cd ${BUILD_DIR}/${SSL_NAME} && ./autogen.sh
     ./configure --prefix="${SSL_PATH}" || { red "Error: Configuration LibreSSL failed."; exit 1; }
-    make || { red "Error: Compilation LibreSSL failed."; exit 1; }
+    make -j$CPU_COUNT || { red "Error: Compilation LibreSSL failed."; exit 1; }
     make install || { red "Error: Installation LibreSSL failed."; exit 1; }
 }
 
@@ -104,26 +113,20 @@ nginx_mainline() {
         --with-stream_ssl_preread_module \
         --add-module=${BUILD_DIR}/ngx_brotli \
         --with-cc-opt="-I${SSL_PATH}/include" \
-        --with-ld-opt=-"L${SSL_PATH}/lib -static" || { red "Error: Configuration Nginx failed."; exit 1; }
+        --with-ld-opt="-L${SSL_PATH}/lib -static" || { red "Error: Configuration Nginx failed."; exit 1; }
 }
 
 install_nginx() {
     clean_temp
     SECONDS=0
     # Check dependencies
-    local DEPENDENCIES="build-essential libpcre3 libpcre3-dev libxslt1-dev libbrotli-dev zlib1g zlib1g-dev cmake autoconf libtool perl curl git wget"
-    MISSING_DEPENDENCIES=()
+    local DEPENDENCIES="build-essential libpcre3 libpcre3-dev libxslt1-dev libbrotli-dev zlib1g zlib1g-dev cmake curl git wget"
     for dep in ${DEPENDENCIES}; do
         if ! dpkg -s $dep >/dev/null 2>&1; then
-            MISSING_DEPENDENCIES+=("$dep")
+            echo "Installing $dep..."
+            apt install -y $dep
         fi
     done
-    if [ ${#MISSING_DEPENDENCIES[@]} -gt 0 ]; then
-        yellow "Error: The following dependencies are not installed. Installing them now..."
-        apt-get update
-        apt-get install -y ${MISSING_DEPENDENCIES[@]} || { red "Error: Failed to install dependencies."; exit 1; }
-        green "Dependencies installed successfully."
-    fi
     # Create dir
     mkdir -p ${NGX_PATH}
     mkdir -p ${NGX_PATH}/conf.d
@@ -148,7 +151,7 @@ install_nginx() {
             *)  red "Error: Invalid number." ;;
         esac
     done
-    make || { red "Error: Compilation Nginx failed."; exit 1; }
+    make -j$CPU_COUNT || { red "Error: Compilation Nginx failed."; exit 1; }
     make install || { red "Error: Installation Nginx failed."; exit 1; }
     green "Nginx successfully installed."
     green "Installing Nginx systemd service now..."
