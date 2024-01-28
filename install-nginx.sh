@@ -58,7 +58,7 @@ ngx_mainline_bs() {
         fi
     done
     # Build BoringSSL
-    git clone --depth=1 https://boringssl.googlesource.com/boringssl ${BUILD_DIR}/boringssl
+    git clone --depth=1 https://github.com/google/boringssl.git ${BUILD_DIR}/boringssl
     mkdir -p ${BUILD_DIR}/boringssl/build && cd ${BUILD_DIR}/boringssl/build
     cmake ..
     make -j$CPU_COUNT || { red "Error: Compilation BoringSSL failed."; exit 1; }
