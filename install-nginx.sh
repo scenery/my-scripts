@@ -3,7 +3,7 @@
 # Website: https://atpx.com
 # Github: https://github.com/scenery/my-scripts
 
-BUILD_DIR=/tmp/nginx-build-by-atpx
+BUILD_DIR=/tmp/nginx_build_atpx
 NGX_PATH=/etc/nginx
 CPU_COUNT=$(nproc)
 
@@ -58,19 +58,21 @@ ngx_mainline_bs() {
         fi
     done
     # Build BoringSSL
-    git clone --depth=1 https://github.com/google/boringssl.git ${BUILD_DIR}/boringssl
-    mkdir -p ${BUILD_DIR}/boringssl/build && cd ${BUILD_DIR}/boringssl/build
+    git clone --depth=1 https://github.com/google/boringssl.git ${BUILD_DIR}/${SSL_NAME}
+    mkdir -p ${BUILD_DIR}/${SSL_NAME}/build && cd ${BUILD_DIR}/${SSL_NAME}/build
     cmake ..
-    make -j$CPU_COUNT || { red "Error: Compilation BoringSSL failed."; exit 1; }
+    make -j$CPU_COUNT || { red "Error: Compilation ${SSL_NAME} failed."; exit 1; }
     cd ${BUILD_DIR}/${NGX_VER}
     ./configure $NGX_CONFIGURE \
         --with-http_v3_module \
-        --with-cc-opt="-I${BUILD_DIR}/boringssl/include" \
-        --with-ld-opt="-L${BUILD_DIR}/boringssl/build/ssl -L${BUILD_DIR}/boringssl/build/crypto" \
+        --with-cc-opt="-I${BUILD_DIR}/${SSL_NAME}/include" \
+        --with-ld-opt="-L${BUILD_DIR}/${SSL_NAME}/build/ssl -L${BUILD_DIR}/${SSL_NAME}/build/crypto" \
         || { red "Error: Configuration Nginx failed."; exit 1; }
 }
 
-install_libressl() {
+ngx_mainline_ls() {
+    ngx_mainline
+    SSL_NAME="libressl"
     # Check dependencies
     local DEPENDENCIES="autoconf libtool perl"
     for dep in ${DEPENDENCIES}; do
@@ -79,52 +81,19 @@ install_libressl() {
             apt install -y $dep
         fi
     done
-    wget "${SSL_URL}/${SSL_NAME}.tar.gz" -O "${BUILD_DIR}/${SSL_NAME}.tar.gz"
-    mkdir -p "${BUILD_DIR}/${SSL_NAME}"
-    tar -xzvf "${BUILD_DIR}/${SSL_NAME}.tar.gz" --directory="${BUILD_DIR}/${SSL_NAME}" --strip-components 1
+    # Build LibreSSL
+    git clone --depth=1 https://github.com/libressl/portable.git ${BUILD_DIR}/${SSL_NAME}
+    mkdir -p ${BUILD_DIR}/${SSL_NAME}/build
     cd ${BUILD_DIR}/${SSL_NAME} && ./autogen.sh
-    ./configure --prefix="${SSL_PATH}" || { red "Error: Configuration LibreSSL failed."; exit 1; }
-    make -j$CPU_COUNT || { red "Error: Compilation LibreSSL failed."; exit 1; }
-    make install || { red "Error: Installation LibreSSL failed."; exit 1; }
-}
-
-ngx_mainline_ls() {
-    ngx_mainline
-    SSL_URL="https://ftp.openbsd.org/pub/OpenBSD/LibreSSL/"
-    SSL_PATH="/usr/local/libressl"
-    local pattern="libressl-[0-9]+\.[0-9]+\.[0-9]+\.tar\.gz"
-    SSL_NAME=$(curl -s ${SSL_URL} | grep -o -E ${pattern} | sort -V | tail -n 1 | sed 's/\.tar\.gz$//')
-    if [ -d "${SSL_PATH}" ]; then
-        local installed_version=$("${SSL_PATH}/bin/openssl" version | awk '{print $2}')
-        local latest_version=$(echo "${SSL_NAME}" | sed 's/libressl-//')
-        echo
-        echo "Installed LibreSSL version: ${installed_version}"
-        if [ "${installed_version}" != "${latest_version}" ]; then
-            while : 
-            do
-            read -p "A newer version (${latest_version}) is available. Do you want to update LibreSSL? (y/n): " goupdate
-            case $goupdate in
-                [Yy][Ee][Ss]|[Yy]) 
-                    install_libressl
-                    break ;;
-                [Nn][Oo]|[Nn]) 
-                    break ;;
-                * ) echo -n "Invalid option. Do you want to update? [y/n]: " ;;
-            esac
-            done
-        else
-            green "LibreSSL is already up to date."
-        fi
-    else
-        echo
-        yellow "LibreSSL is not installed, installing now..."
-        install_libressl
-    fi
+    ./configure || { red "Error: Configuration ${SSL_NAME} failed."; exit 1; }
+    make -j$CPU_COUNT || { red "Error: Compilation ${SSL_NAME} failed."; exit 1; }
+    make install DESTDIR=${BUILD_DIR}/${SSL_NAME}/build || { red "Error: Installation ${SSL_NAME} failed."; exit 1; }
     cd ${BUILD_DIR}/${NGX_VER}
     ./configure $NGX_CONFIGURE \
         --with-http_v3_module \
-        --with-cc-opt="-I${SSL_PATH}/include" \
-        --with-ld-opt="-L${SSL_PATH}/lib -static" \
+        --with-cc-opt="-I${BUILD_DIR}/${SSL_NAME}/build/include" \
+        --with-ld-opt="-L${BUILD_DIR}/${SSL_NAME}/build/lib" \
+        --with-ld-opt="-static" \
         || { red "Error: Configuration Nginx failed."; exit 1; }
 }
 
