@@ -1,6 +1,6 @@
 # My Scripts
 
-A collection of personally developed scripts, though I'm not entirely sure what they do. #° 3°#
+A collection of scripts I wrote for personal use, I'm not sure what these scripts do. #° 3°#
 
 _Note: These scripts are intended for individual testing purposes in a controlled environment (most of them will only work on Debian). This means they may not be suitable for everyone. Please be sure you understand their functionality before running them._
 
@@ -28,7 +28,7 @@ bash <(curl -Ls https://raw.githubusercontent.com/scenery/my-scripts/main/server
 
 ### install-nginx
 
-Auto compiling and installing the latest [Nginx](https://nginx.org). You can choose to install the stable version with [OpenSSL](https://www.openssl.org/source/) or the mainline version with [BoringSSL](https://boringssl.googlesource.com/boringssl) / [LibreSSL](https://www.libressl.org/).
+Auto compiling and installing the latest [Nginx](https://nginx.org). You can choose to install the stable version with the latest [OpenSSL](https://www.openssl.org/source/) or the mainline version with the latest [BoringSSL](https://boringssl.googlesource.com/boringssl) / [LibreSSL](https://www.libressl.org/).
 
 ```
 bash <(curl -Ls git.io/nginx.sh)
