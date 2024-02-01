@@ -58,12 +58,12 @@ or
 bash <(curl -Ls https://raw.githubusercontent.com/scenery/my-scripts/main/traceroute.sh)
 ```
 
-### ~~check-netflix~~
+### ~~netflix-test~~
 
 _No longer maintained since Feb 1, 2024._
 
 ```
-bash <(curl -Ls https://raw.githubusercontent.com/scenery/my-scripts/main/check-netflix.sh)
+bash <(curl -Ls https://raw.githubusercontent.com/scenery/my-scripts/main/netflix-test.sh)
 ```
 
 
