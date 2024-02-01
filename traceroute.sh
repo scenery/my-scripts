@@ -1,9 +1,7 @@
   
 #!/bin/bash
-# A simple trace route test tool
-# Powered by Besttrace (ipip.net)
 # Written on 2021-09-19 by ATP
-# Website: https://www.zatp.com
+# Website: https://www.atpx.com
 # Github: https://github.com/scenery/my-scripts
 
 green(){
@@ -55,8 +53,9 @@ clean_up() {
 main() {
     green "+-------------------------------------------------+"
     green "| Traceroute to China                             |"
-    green "| Author : Atp <hi@zatp.com>                      |"
+    green "| Author : ATP <https://atpx.com>                 |"
     green "| Github: https://github.com/scenery/my-scripts   |"
+    green "| *Note: This script is no longer maintained      |"
     green "+-------------------------------------------------+"
     echo
     green " 1. Run traceroute"
