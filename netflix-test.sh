@@ -39,7 +39,7 @@ function unlock_test() {
         red "Sorry, Your IPv${1} address is blocked by Netflix.";
         return
     elif [[ "${self_result}" == "200" ]] && [[ "${licensed_result}" == "200" ]]; then
-        green "Congrats! Your IPv${1} address can unblock all Netflix (region: $region) content.";
+        green "Congrats! Your IPv${1} address can unlock all Netflix (region: $region) content.";
         return
     else
         yellow "Network error, please try again later."
