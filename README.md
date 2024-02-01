@@ -48,7 +48,7 @@ bash <(curl -Ls https://raw.githubusercontent.com/scenery/my-scripts/main/acme-c
 
 ### ~~traceroute~~
 
-_No longer maintained._
+_No longer maintained since May 9, 2022._
 
 ```
 bash <(curl -Ls git.io/traceroute.sh)
@@ -60,7 +60,7 @@ bash <(curl -Ls https://raw.githubusercontent.com/scenery/my-scripts/main/tracer
 
 ### ~~check-netflix~~
 
-_No longer maintained._
+_No longer maintained since Feb 1, 2024._
 
 ```
 bash <(curl -Ls https://raw.githubusercontent.com/scenery/my-scripts/main/check-netflix.sh)
