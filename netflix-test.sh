@@ -31,18 +31,16 @@ function unlock_test() {
     local licensed_result=$(curl -${1} --user-agent "${UA}" -fsL --write-out %{http_code} --output /dev/null --max-time 5 ${licensed_test} 2>&1)
     
     if [[ "${self_result}" == "403" ]] && [[ "${licensed_result}" == "403" ]]; then
-        yellow "Your IPv${1} address can unblock Netflix (region: $region) but only Netflix original content.";
+        red "Sorry, Your IPv${1} address is blocked by Netflix.";
         return
     elif [[ "${self_result}" == "404" ]] && [[ "${licensed_result}" == "404" ]]; then
-        yellow "Your IPv${1} address can unblock Netflix (region: $region) but only Netflix original content.";
-        return
-        red "Sorry, Your IPv${1} address is blocked by Netflix.";
+        yellow "Your IPv${1} address can unlock Netflix (region: $region) but only Netflix original content.";
         return
     elif [[ "${self_result}" == "200" ]] && [[ "${licensed_result}" == "200" ]]; then
         green "Congrats! Your IPv${1} address can unlock all Netflix (region: $region) content.";
         return
     else
-        yellow "Network error, please try again later."
+        blue "Network error, please try again later."
         return
     fi
 }
@@ -71,7 +69,6 @@ main() {
     else
         blue "This host does not support IPv6 address, skipping...";
     fi
-    echo
 }
 
 main
