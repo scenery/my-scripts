@@ -18,8 +18,7 @@ yellow(){
 }
 
 ngx_stable() {
-    local ngx_latest=$(curl -s https://nginx.org/packages/debian/pool/nginx/n/nginx/ | grep '"nginx_' | sed -n "s/^.*\">nginx_\(.*\)\~.*$/\1/p" | sort -Vr | head -1 | cut -d'-' -f1)
-    NGX_VER="nginx-${ngx_latest}"
+    NGX_VER="nginx-${ngx_latest_stable}"
     wget https://nginx.org/download/${NGX_VER}.tar.gz -O "${BUILD_DIR}/${NGX_VER}.tar.gz"
     mkdir -p "${BUILD_DIR}/${NGX_VER}"
     tar -xzvf "${BUILD_DIR}/${NGX_VER}.tar.gz" --directory="${BUILD_DIR}/${NGX_VER}" --strip-components 1
@@ -37,13 +36,26 @@ ngx_stable() {
 }
 
 ngx_mainline() {
-    local ngx_latest=$(curl -s https://nginx.org/packages/mainline/debian/pool/nginx/n/nginx/ | grep '"nginx_' | sed -n "s/^.*\">nginx_\(.*\)\~.*$/\1/p" | sort -Vr | head -1 | cut -d'-' -f1)
-    NGX_VER="nginx-${ngx_latest}"
+    NGX_VER="nginx-${ngx_latest_mainline}"
     wget https://nginx.org/download/${NGX_VER}.tar.gz -O "${BUILD_DIR}/${NGX_VER}.tar.gz"
     mkdir -p "${BUILD_DIR}/${NGX_VER}"
     tar -xzvf "${BUILD_DIR}/${NGX_VER}.tar.gz" --directory="${BUILD_DIR}/${NGX_VER}" --strip-components 1
     # Download bortli
     git clone --recursive https://github.com/google/ngx_brotli.git ${BUILD_DIR}/ngx_brotli
+}
+
+ngx_mainline_os() {
+    ngx_mainline
+    SSL_NAME="openssl"
+    SSL_VER=`curl -s https://api.github.com/repos/openssl/openssl/releases/latest | grep tag_name | cut -f4 -d "\""`
+    wget "https://github.com/openssl/openssl/releases/download/${SSL_VER}/${SSL_VER}.tar.gz" -O "${BUILD_DIR}/${SSL_NAME}.tar.gz"
+    mkdir -p "${BUILD_DIR}/${SSL_NAME}"
+    tar -xzvf "${BUILD_DIR}/${SSL_NAME}.tar.gz" --directory="${BUILD_DIR}/${SSL_NAME}" --strip-components 1
+    cd ${BUILD_DIR}/${NGX_VER}
+    ./configure $NGX_CONFIGURE \
+        --with-http_v3_module \
+        --with-openssl=${BUILD_DIR}/${SSL_NAME} \
+        || { red "Error: Configuration Nginx failed."; exit 1; }
 }
 
 ngx_mainline_bs() {
@@ -112,6 +124,9 @@ install_nginx() {
     mkdir -p ${NGX_PATH}
     mkdir -p ${NGX_PATH}/conf.d
     mkdir -p ${BUILD_DIR}
+    # Nginx version
+    ngx_latest_stable=$(curl -s https://nginx.org/packages/debian/pool/nginx/n/nginx/ | grep '"nginx_' | sed -n "s/^.*\">nginx_\(.*\)\~.*$/\1/p" | sort -Vr | head -1 | cut -d'-' -f1)
+    ngx_latest_mainline=$(curl -s https://nginx.org/packages/mainline/debian/pool/nginx/n/nginx/ | grep '"nginx_' | sed -n "s/^.*\">nginx_\(.*\)\~.*$/\1/p" | sort -Vr | head -1 | cut -d'-' -f1)
     # Nginx configure
     NGX_CONFIGURE="--prefix=${NGX_PATH} \
         --add-module=${BUILD_DIR}/ngx_brotli \
@@ -130,18 +145,21 @@ install_nginx() {
     while :
     do
         echo
-        green "  1. Stable (with OpenSSL)"
-        green "  2. Mainline (with BoringSSL and HTTP/3 support)"
-        green "  3. Mainline (with LibreSSL and HTTP/3 support)"
+        green "  1. Stable (${ngx_latest_stable} with OpenSSL)"
+        green "  2. Mainline (${ngx_latest_mainline} with OpenSSL)"
+        green "  3. Mainline (${ngx_latest_mainline} with BoringSSL)"
+        green "  4. Mainline (${ngx_latest_mainline} with LibreSSL)"
         yellow "  0. Exit"
         echo
-        read -p "Enter your menu choice [0-3]: " num
+        read -p "Enter your menu choice [0-4]: " num
         case "${num}" in
             1)  ngx_stable 
                 break ;;
-            2)  ngx_mainline_bs
+            2)  ngx_mainline_os
                 break ;;
-            3)  ngx_mainline_ls
+            3)  ngx_mainline_bs
+                break ;;
+            4)  ngx_mainline_ls
                 break ;;
             0)  exit 0 ;;
             *)  red "Error: Invalid number." ;;
@@ -210,11 +228,11 @@ main() {
         exit 1
     fi
     # clear
-    green "+-------------------------------------------------------------+"
-    green "| A tool for auto-compiling and installing the latest Nginx   |"
-    green "| Author : ATP <https://atpx.com>                             |"
-    green "| Github : https://github.com/scenery/my-scripts              |"
-    green "+-------------------------------------------------------------+"
+    green "+------------------------------------------------------------+"
+    green "| A tool for auto-compiling and installing the latest Nginx  |"
+    green "| Author : ATP <https://atpx.com>                            |"
+    green "| Github : https://github.com/scenery/my-scripts             |"
+    green "+------------------------------------------------------------+"
     while :
     do
         echo
