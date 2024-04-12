@@ -156,6 +156,8 @@ install_nginx() {
         green "  4. Mainline (${ngx_latest_mainline} with LibreSSL)"
         yellow "  0. Exit"
         echo
+        yellow "* The latest mainline v1.25.4 made some changes, only option 1 and 2 is valid at present."
+        echo
         read -p "Enter your menu choice [0-4]: " num
         case "${num}" in
             1)  ngx_stable 
