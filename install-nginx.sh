@@ -88,7 +88,7 @@ ngx_mainline_ls() {
     ngx_mainline
     SSL_NAME="libressl"
     # Check dependencies
-    local DEPENDENCIES="autoconf libtool perl"
+    local DEPENDENCIES="autoconf libtool perl libxml2-dev libxslt1-dev"
     for dep in ${DEPENDENCIES}; do
         if ! dpkg -s $dep >/dev/null 2>&1; then
             echo "Installing $dep..."
@@ -155,8 +155,6 @@ install_nginx() {
         green "  3. Mainline (${ngx_latest_mainline} with BoringSSL)"
         green "  4. Mainline (${ngx_latest_mainline} with LibreSSL)"
         yellow "  0. Exit"
-        echo
-        yellow "* The latest mainline v1.25.4 made some changes, only option 1 and 2 is valid at present."
         echo
         read -p "Enter your menu choice [0-4]: " num
         case "${num}" in
