@@ -86,7 +86,7 @@ ngx_mainline_ls() {
     ngx_mainline
     SSL_NAME="libressl"
     # Check dependencies
-    local DEPENDENCIES="autoconf libtool perl libxml2 libxml2-dev libxslt-dev"
+    local DEPENDENCIES="autoconf libtool perl"
     for dep in ${DEPENDENCIES}; do
         if ! dpkg -s $dep >/dev/null 2>&1; then
             echo "Installing $dep..."
