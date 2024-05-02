@@ -27,9 +27,8 @@ ngx_stable() {
     wget "https://github.com/openssl/openssl/releases/download/${SSL_VER}/${SSL_VER}.tar.gz" -O "${BUILD_DIR}/${SSL_NAME}.tar.gz"
     mkdir -p "${BUILD_DIR}/${SSL_NAME}"
     tar -xzvf "${BUILD_DIR}/${SSL_NAME}.tar.gz" --directory="${BUILD_DIR}/${SSL_NAME}" --strip-components 1
-    # Download bortli & webdav ext
+    # Download bortli
     git clone --recursive https://github.com/google/ngx_brotli.git ${BUILD_DIR}/ngx_brotli
-    git clone https://github.com/mid1221213/nginx-dav-ext-module.git  ${BUILD_DIR}/ngx_dav_ext
     cd ${BUILD_DIR}/${NGX_VER}
     ./configure $NGX_CONFIGURE \
         --with-openssl=${BUILD_DIR}/${SSL_NAME} \
@@ -41,9 +40,8 @@ ngx_mainline() {
     wget https://nginx.org/download/${NGX_VER}.tar.gz -O "${BUILD_DIR}/${NGX_VER}.tar.gz"
     mkdir -p "${BUILD_DIR}/${NGX_VER}"
     tar -xzvf "${BUILD_DIR}/${NGX_VER}.tar.gz" --directory="${BUILD_DIR}/${NGX_VER}" --strip-components 1
-    # Download bortli & webdav ext
+    # Download bortli
     git clone --recursive https://github.com/google/ngx_brotli.git ${BUILD_DIR}/ngx_brotli
-    git clone https://github.com/mid1221213/nginx-dav-ext-module.git  ${BUILD_DIR}/ngx_dav_ext
 }
 
 ngx_mainline_os() {
@@ -132,7 +130,6 @@ install_nginx() {
     # Nginx configure
     NGX_CONFIGURE="--prefix=${NGX_PATH} \
         --add-module=${BUILD_DIR}/ngx_brotli \
-        --add-module=${BUILD_DIR}/ngx_dav_ext \
         --with-http_dav_module \
         --with-http_dav_module \
         --with-http_v2_module \
