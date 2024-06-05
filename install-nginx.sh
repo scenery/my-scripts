@@ -53,7 +53,6 @@ ngx_mainline_os() {
     tar -xzvf "${BUILD_DIR}/${SSL_NAME}.tar.gz" --directory="${BUILD_DIR}/${SSL_NAME}" --strip-components 1
     cd ${BUILD_DIR}/${NGX_VER}
     ./configure $NGX_CONFIGURE \
-        --with-http_v3_module \
         --with-openssl=${BUILD_DIR}/${SSL_NAME} \
         || { red "Error: Configuration Nginx failed."; exit 1; }
 }
@@ -76,7 +75,6 @@ ngx_mainline_bs() {
     make -j$CPU_COUNT || { red "Error: Compilation ${SSL_NAME} failed."; exit 1; }
     cd ${BUILD_DIR}/${NGX_VER}
     ./configure $NGX_CONFIGURE \
-        --with-http_v3_module \
         --with-cc-opt="-I${BUILD_DIR}/${SSL_NAME}/include" \
         --with-ld-opt="-L${BUILD_DIR}/${SSL_NAME}/build/ssl -L${BUILD_DIR}/${SSL_NAME}/build/crypto" \
         || { red "Error: Configuration Nginx failed."; exit 1; }
@@ -102,7 +100,6 @@ ngx_mainline_ls() {
     make install DESTDIR=${BUILD_DIR}/${SSL_NAME}/build || { red "Error: Installation ${SSL_NAME} failed."; exit 1; }
     cd ${BUILD_DIR}/${NGX_VER}
     ./configure $NGX_CONFIGURE \
-        --with-http_v3_module \
         --with-cc-opt="-I${BUILD_DIR}/${SSL_NAME}/build/include" \
         --with-ld-opt="-L${BUILD_DIR}/${SSL_NAME}/build/lib" \
         --with-ld-opt="-static" \
@@ -133,6 +130,7 @@ install_nginx() {
         --with-http_dav_module \
         --with-http_dav_module \
         --with-http_v2_module \
+        --with-http_v3_module \
         --with-http_ssl_module \
         --with-http_gzip_static_module \
         --with-http_stub_status_module \
