@@ -12,8 +12,8 @@ yellow(){
     echo -e "\033[33m\033[01m$1\033[0m"
 }
 
-trojan_go_location=/home/trojan/trojan-go
-trojan_rust_location=/home/trojan/trojan-rust
+trojan_go_location=/home/app/trojan/trojan-go
+trojan_rust_location=/home/app/trojan/trojan-rust
 
 install_trojan_go() {
     SECONDS=0
