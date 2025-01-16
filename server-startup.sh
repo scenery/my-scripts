@@ -194,6 +194,63 @@ EOF
     echo "Back to menu..."
 }
 
+set_timezone() {
+    echo "Current timezone: "
+    timedatectl show --property=Timezone --value
+    echo
+    echo "Please choose a timezone:"
+    echo "1. Asia/Singapore"
+    echo "2. Asia/Hong_Kong"
+    echo "3. Asia/Shanghai"
+    echo "4. America/Los_Angeles"
+    echo "5. UTC"
+    echo "6. Manually input timezone (e.g., Europe/London, Europe/Berlin, etc.)"
+
+    read -p "Enter your choice [1-6]: " choice
+
+    case $choice in
+        1) timezone="Asia/Singapore" ;;
+        2) timezone="Asia/Hong_Kong" ;;
+        3) timezone="Asia/Shanghai" ;;
+        4) timezone="America/Los_Angeles" ;;
+        5) timezone="UTC" ;;
+        6)
+            echo "Please enter a valid timezone, following the format: Region/City"
+            echo "Refer: https://en.wikipedia.org/wiki/List_of_tz_database_time_zones"
+            read -p "Enter the timezone: " timezone
+            ;;
+        *)
+            echo "Invalid choice, please try again."
+            return 1
+            ;;
+    esac
+
+    timedatectl set-timezone "$timezone"
+    green "Timezone has been successfully set to $timezone."
+    timedatectl
+}
+
+enable_ntp() {
+    echo "Current NTP status: "
+    timedatectl show --property=NTP --value
+    echo "Setting up NTP..."
+
+    if ! dpkg -l | grep -q systemd-timesyncd; then
+        apt install systemd-timesyncd -y
+        green "systemd-timesyncd installed successfully."
+    else
+        yellow "systemd-timesyncd is already installed."
+    fi
+
+    sed -i 's/^#\?NTP=.*/NTP=time.cloudflare.com time.google.com/' /etc/systemd/timesyncd.conf
+    sed -i 's/^#\?FallbackNTP=.*/FallbackNTP=time.windows.com time.apple.com 0.debian.pool.ntp.org 1.debian.pool.ntp.org/' /etc/systemd/timesyncd.conf
+
+    systemctl restart systemd-timesyncd
+    green "NTP servers have been configured."
+    echo "Configured NTP servers:"
+    grep -E '^NTP=|^FallbackNTP=' /etc/systemd/timesyncd.conf
+}
+
 main() {
     # Check if user is root
     if [ $(id -u) != "0" ]; then
@@ -219,6 +276,8 @@ main() {
         green " 4. Install Nginx"
         green " 5. SSH Keep Alive"
         green " 6. Colorizing Bash Prompt"
+        green " 7. Set timezone"
+        green " 8. Enable NTP servers"
         yellow " 0. Exit"
         echo
         read -p "Enter your menu choice [0-6]: " num
@@ -229,6 +288,8 @@ main() {
         4)  install_nginx ;;
         5)  ssh_keepalive ;;
         6)  colorizing_bash ;;
+        7)  set_timezone ;;
+        8)  enable_ntp ;;
         0)  echo "Bye~"
             sleep 1
             exit 0 ;;
