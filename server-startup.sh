@@ -174,14 +174,8 @@ if [ -z "\$PS1" ]; then
     return
 fi
 
-force_color_prompt=yes
-
-if [ "\$force_color_prompt" = yes ]; then
-    if [ "\$(id -u)" -eq 0 ]; then
-        PS1='\[\033[01;31m\]\u@\h\[\033[00m\]:\[\033[01;34m\]\w\[\033[00m\]\# '
-    else
-        PS1='\[\033[01;32m\]\u@\h\[\033[00m\]:\[\033[01;34m\]\w\[\033[00m\]\$ '
-    fi
+if [ "\$(id -u)" -eq 0 ]; then
+    PS1='\[\033[01;31m\]\u\[\033[01;33m\]@\[\033[01;36m\]\h:\[\033[01;33m\]\w\[\033[01;35m\]# \[\033[00m\]'
 else
     PS1='\u@\h:\w\$ '
 fi
