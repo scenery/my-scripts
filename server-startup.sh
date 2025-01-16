@@ -48,48 +48,35 @@ change_hostname() {
     echo "Back to menu..."
 }
 
-check_bbr_status() {
-    local param=$(sysctl net.ipv4.tcp_congestion_control | awk '{print $3}')
-    if [[ x"${param}" == x"bbr" ]]; then
-        return 0
-    else
-        return 1
+install_bbr() {
+    local current_bbr_status=$(sysctl net.ipv4.tcp_congestion_control | awk '{print $3}')
+    if [[ "$current_bbr_status" == "bbr" ]]; then
+        yellow "TCP BBR has already been enabled, nothing to do."
+        echo "Back to menu..."
+        return
     fi
-}
 
-# https://www.xmodulo.com/compare-two-version-numbers.html
-version_ge(){
-    test "$(echo "$@" | tr " " "\n" | sort -rV | head -n 1)" == "$1"
-}
-
-check_kernel_version() {
     local kernel_version=$(uname -r | cut -d- -f1)
-    if version_ge ${kernel_version} 4.9; then
-        return 0
-    else
-        return 1
+    if [[ "$(echo -e "${kernel_version}\n4.9" | sort -rV | head -n 1)" != "${kernel_version}" ]]; then
+        red "Your kernel version is lower than 4.9. Please run this script again after upgrading the kernel."
+        echo "Back to menu..."
+        return
     fi
-}
 
-sysctl_config() {
+    echo "The kernel version is greater than or equal to 4.9. Directly setting TCP BBR..."
     echo "net.core.default_qdisc = fq" >> /etc/sysctl.conf
     echo "net.ipv4.tcp_congestion_control = bbr" >> /etc/sysctl.conf
     sysctl -p >/dev/null 2>&1
-}
 
-install_bbr() {
-    if check_bbr_status; then
-        echo
-        yellow "TCP BBR has already been enabled, nothing to do."
-        echo "Back to menu..."
-    elif check_kernel_version; then
-        echo
-        echo "The kernel version is greater than 4.9, directly setting TCP BBR..."
-        sysctl_config
-        green "Setting TCP BBR completed"
+    local new_bbr_status=$(sysctl net.ipv4.tcp_congestion_control | awk '{print $3}')
+    if [[ "$new_bbr_status" == "bbr" ]]; then
+        green "Setting TCP BBR completed successfully."
         echo "You can run 'sysctl net.ipv4.tcp_congestion_control' to check the congestion control algorithm in use."
-        echo "Back to menu..."
+    else
+        red "Failed to enable TCP BBR. Please check the configuration in /etc/sysctl.conf"
     fi
+
+    echo "Back to menu..."
 }
 
 change_ssh_port() {
