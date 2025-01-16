@@ -27,8 +27,24 @@ change_hostname() {
     echo "3. Use lower case letters instead of upper case letters."
     echo
     read -p "Input a new hostname: " newhostname
-    hostnamectl set-hostname $newhostname
-    green "Success, you will see the effect on the next connection."
+    if [[ ! $newhostname =~ ^[a-z0-9][a-z0-9-]*(\.[a-z0-9][a-z0-9-]*)*$ ]]; then
+        echo "Invalid hostname format. Please follow the rules."
+        return
+    fi
+
+    hostnamectl set-hostname "$newhostname"
+    echo "$newhostname" > /etc/hostname
+
+    if grep -q "127.0.0.1" /etc/hosts; then
+        sed -i "s/127.0.0.1.*/127.0.0.1   localhost $newhostname/" /etc/hosts
+    else
+        echo "127.0.0.1   localhost $newhostname" >> /etc/hosts
+    fi
+    if grep -q "::1" /etc/hosts; then
+        sed -i "s/::1.*/::1         localhost ip6-localhost ip6-loopback $newhostname/" /etc/hosts
+    fi
+
+    green "Success, you will see the effect on the next session."
     echo "Back to menu..."
 }
 
