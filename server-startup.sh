@@ -251,6 +251,47 @@ enable_ntp() {
     grep -E '^NTP=|^FallbackNTP=' /etc/systemd/timesyncd.conf
 }
 
+set_journal_log_size() {
+    local default_size="500M"
+    echo "This will update the 'SystemMaxUse' parameter in '/etc/systemd/journald.conf'."
+    echo "The default value is ${default_size}. You can use units like M (megabytes), G (gigabytes), etc."
+
+    echo -n "Enter the desired log size (or press Enter to use default ${default_size}): "
+    read log_size
+
+    if [ -z "$log_size" ]; then
+        log_size=$default_size
+    fi
+
+    if [[ ! "$log_size" =~ ^[0-9]+[M|G]?$ ]]; then
+        echo "Invalid input. Please enter a valid size (e.g., 500M, 1G)."
+        return
+    fi
+
+    echo "Your 'SystemMaxUse' will be updated to '${log_size}'."
+    echo -n "Do you want to continue? [Y/N]: "
+
+    while :
+    do
+        read confirm
+        case $confirm in
+            [Yy][Ee][Ss]|[Yy]) 
+                sed -i "s/^#SystemMaxUse=.*$/SystemMaxUse=${log_size}/" /etc/systemd/journald.conf
+                if ! grep -q "^SystemMaxUse=" /etc/systemd/journald.conf; then
+                    echo "SystemMaxUse=${log_size}" >> /etc/systemd/journald.conf
+                fi
+                systemctl restart systemd-journald
+                green "Log size updated to ${log_size} and journald service restarted."
+                break ;;
+            [Nn][Oo]|[Nn])
+                echo "No changes made. Back to menu..."
+                break ;;
+            * )
+                echo -n "Invalid option, do you want to continue? [Y/N]: " ;;
+        esac
+    done
+}
+
 main() {
     # Check if user is root
     if [ $(id -u) != "0" ]; then
@@ -276,8 +317,9 @@ main() {
         green " 4. Install Nginx"
         green " 5. SSH Keep Alive"
         green " 6. Colorizing Bash Prompt"
-        green " 7. Set timezone"
-        green " 8. Enable NTP servers"
+        green " 7. Set Timezone"
+        green " 8. Enable NTP Servers"
+        green " 9. Set Journal Log Max Size"
         yellow " 0. Exit"
         echo
         read -p "Enter your menu choice [0-6]: " num
@@ -290,6 +332,7 @@ main() {
         6)  colorizing_bash ;;
         7)  set_timezone ;;
         8)  enable_ntp ;;
+        9)  set_journal_log_size ;;
         0)  echo "Bye~"
             sleep 1
             exit 0 ;;
