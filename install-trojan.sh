@@ -1,86 +1,148 @@
 #!/bin/bash
 # Written on 2022-01-11
+# Refactored on 2025-04-24
 # Github: https://github.com/scenery/my-scripts
 
-green(){
-    echo -e "\033[32m\033[01m$1\033[0m"
-}
-red(){
-    echo -e "\033[31m\033[01m$1\033[0m"
-}
-yellow(){
-    echo -e "\033[33m\033[01m$1\033[0m"
-}
+green(){ echo -e "\033[32m\033[01m$1\033[0m"; }
+yellow(){ echo -e "\033[33m\033[01m$1\033[0m"; }
+red(){ echo -e "\033[31m\033[01m$1\033[0m"; }
 
-trojan_go_location=/home/app/trojan-go
-trojan_rust_location=/home/app/trojan-rust
+TROJAN_GO_DIR="/home/app/trojan-go"
+TROJAN_RUST_DIR="/home/app/trojan-rust"
 
-install_trojan_go() {
-    SECONDS=0
-    green "================Start Installing Trojan-Go==============="
-    green "Select the version you want to install: "
-    green "1: Trojan-Go Original (https://github.com/p4gefau1t/trojan-go)"
-    green "2: Trojan-Go Fork (https://github.com/fregie/trojan-go)"
-    read -p "Enter your choice: " input
-    if [ $input -eq 1 ]; then
-        maintainer=p4gefau1t
-    elif [ $input -eq 2 ]; then
-        maintainer=fregie
-    else
-        red "Invalid input, please enter 1 or 2"
-        red "Aborted, Back to menu..."
-        sleep 2
-        main
+install_libs(){
+    local pkgs=("$@")
+    local miss=()
+    for p in "${pkgs[@]}"; do
+        if ! command -v "$p" &>/dev/null; then
+            miss+=("$p")
+        fi
+    done
+    if [ "${#miss[@]}" -gt 0 ]; then
+        yellow "Installing missing packages: ${miss[*]}"
+        apt update
+        apt install -y "${miss[@]}"
     fi
-    apt install curl zip unzip -y
-    mkdir -p $trojan_go_location && cd $trojan_go_location
-    tag_name=`curl -s https://api.github.com/repos/$maintainer/trojan-go/releases/latest | grep tag_name | cut -f4 -d "\""`
-    wget https://github.com/$maintainer/trojan-go/releases/download/$tag_name/trojan-go-linux-amd64.zip
-    unzip trojan-go-linux-amd64.zip
-    rm trojan-go-linux-amd64.zip
-    cp $trojan_go_location/example/server.json $trojan_go_location
-    chmod +x trojan-go
-    echo "Installing trojan-go systemd service..."
-    cat > /etc/systemd/system/trojan-go.service <<-EOF
-[Unit]
-Description=Trojan-Go
-Documentation=https://p4gefau1t.github.io/trojan-go/
-After=network.target nss-lookup.target
+}
 
-[Service]
+get_latest_ver(){
+    install_libs curl
+    curl -s "https://api.github.com/repos/$1/releases/latest" \
+      | grep -Po '"tag_name":\s*"\K([^"]+)'
+}
+
+get_installed_version() {
+    local app_dir="$1"
+    local app_name="$2"
+    local version=""
+    if [[ -x "${app_dir}/${app_name}" ]]; then
+        if [[ "${app_name}" == "trojan-go" ]]; then
+             version="$("${app_dir}/${app_name}" --version 2>&1 | grep -Po 'Trojan-Go[ ]*v?\K[0-9.]+' )"
+        elif [[ "${app_name}" == "trojan_rust" ]]; then
+             version="$("${app_dir}/${app_name}" --version 2>&1 | grep -Po 'Trojan Rust[ ]*v?\K[0-9.]+' )"
+        fi
+    fi
+    echo "$version"
+}
+
+download_and_move() {
+    local app_dir="$1"
+    local app_name="$2"
+    local repo="$3"
+    local arch="$4"
+    local temp_dir="$5"
+    local latest_ver="$6"
+
+    mkdir -p "${temp_dir}"
+    local download_name
+    local dl_url
+
+    if [[ "${app_name}" == "trojan-go" ]]; then
+        download_name="trojan-go.zip"
+        dl_url="https://github.com/${repo}/releases/download/${latest_ver}/trojan-go-linux-${arch}.zip"
+    else
+        download_name="trojan_rust"
+        dl_url="https://github.com/${repo}/releases/download/${latest_ver}/trojan_rust_linux_x86_64"
+    fi
+
+    echo "Downloading ${dl_url} ..."
+    wget -qO "${temp_dir}/${download_name}" "${dl_url}"
+    if [[ ! -s "${temp_dir}/${download_name}" ]]; then
+        red "Download failed, aborting."
+        exit 1
+    fi
+
+    echo "Moving ${app_name} to ${app_dir}/ ..."
+    mkdir -p "${app_dir}"
+    if [[ "${app_name}" == "trojan-go" ]]; then
+        unzip -qo "${temp_dir}/${download_name}" -d "${temp_dir}"
+        mv "${temp_dir}/${app_name}" "${app_dir}/${app_name}"
+    else
+        chmod +x "${temp_dir}/${app_name}"
+        mv "${temp_dir}/${app_name}" "${app_dir}/${app_name}"
+    fi
+}
+
+create_systemd_service() {
+    local app_dir="$1"
+    local app_name="$2"
+    local service_name="$3"
+    local service_description="$4"
+    local service_documentation="$5"
+    local config_file="$6"
+    local run_user="$7"
+
+    local service_config=""
+    if [[ -n "$run_user" && "$run_user" != "root" ]]; then
+        if ! id "$run_user" &>/dev/null; then
+            yellow "User '$run_user' does not exist. Please make sure to create it later."
+        fi
+        service_config="User=${run_user}
+Group=${run_user}
 CapabilityBoundingSet=CAP_NET_ADMIN CAP_NET_BIND_SERVICE
 AmbientCapabilities=CAP_NET_ADMIN CAP_NET_BIND_SERVICE
 NoNewPrivileges=true
-PIDFile=$trojan_go_location/trojan-go.pid
-ExecStart=$trojan_go_location/trojan-go -config $trojan_go_location/server.json
+"
+    else
+        service_config=""
+    fi
+
+    cat > "/etc/systemd/system/${service_name}.service" <<-EOF
+[Unit]
+Description=${service_description}
+Documentation=${service_documentation}
+After=network.target nss-lookup.target
+
+[Service]
+Type=simple
+${service_config}ExecStart=${app_dir}/${app_name} --config ${config_file}
+LimitNOFILE=65536
 Restart=on-failure
 RestartSec=10s
-RestartPreventExitStatus=23
-LimitNOFILE=infinity
 
 [Install]
 WantedBy=multi-user.target
 EOF
-
-    systemctl daemon-reload
-    systemctl enable trojan-go.service
-    green "Done!"
-    green "Version: $tag_name"
-    green "Program Path: $trojan_go_location"
-    green "Status: service trojan-go status"
-    yellow "Total: $SECONDS seconds"
-    yellow "Edit $trojan_go_location/server.json before running!"
 }
 
-install_trojan_rust() {
-    SECONDS=0
-    green "================Start Installing TrojanRust==============="
-    sleep 1
-    apt install curl -y
-    mkdir -p $trojan_rust_location && cd $trojan_rust_location
-    tag_name=`curl -s https://api.github.com/repos/cty123/TrojanRust/releases/latest | grep tag_name | cut -f4 -d "\""`
-    wget -O trojan_rust https://github.com/cty123/TrojanRust/releases/download/$tag_name/trojan_rust_linux_x86_64
-    cat > $trojan_rust_location/server.json <<-EOF
+config_new_install() {
+    local app_dir="$1"
+    local app_name="$2"
+    local service_name="$3"
+    local latest_ver="$4"
+    local service_description="$5"
+    local service_documentation="$6"
+    local temp_dir="$7"
+
+    # create config file
+    local config_file="${app_dir}/server.json"
+
+    if [[ ! -f "${config_file}" ]]; then
+        if [[ "${app_name}" == "trojan-go" ]]; then
+            mv "${temp_dir}/example/server.json" "${config_file}"
+            chmod 644 "${config_file}"
+        else
+            cat > "${config_path}" <<-EOF
 {
     "inbound": {
         "mode": "TCP",
@@ -99,76 +161,180 @@ install_trojan_rust() {
     }
 }
 EOF
-    chmod +x trojan_rust
-    echo "Installing trojan-rust systemd service..."
-    cat > /etc/systemd/system/trojan-rust.service <<-EOF
-[Unit]
-Description=TrojanRust
-Documentation=https://github.com/cty123/TrojanRust
-After=network.target nss-lookup.target
+        fi
+    else
+        yellow "Config file already exists at ${config_file}. No changes made."
+    fi
 
-[Service]
-Type=simple
-ExecStart=$trojan_rust_location/trojan_rust --config $trojan_rust_location/server.json
-ExecReload=/bin/kill -HUP \$MAINPID
-LimitNOFILE=51200
-Restart=on-failure
-RestartSec=10s
-RestartPreventExitStatus=23
+    # create systemd service file
+    echo
+    echo "Please enter the user to run the ${service_name}.service"
+    echo "* This user MUST have read access to your SSL certificate files."
+    read -rp "Enter the user (default root): " run_user
 
-[Install]
-WantedBy=multi-user.target
-EOF
+    create_systemd_service "${app_dir}" "${app_name}" "${service_name}" "${service_description}" "${service_documentation}" "${config_file}" "${run_user}"
 
     systemctl daemon-reload
-    systemctl enable trojan-rust.service
-    green "Done!"
-    green "Version: $tag_name"
-    green "Program Path: $trojan_rust_location"
-    green "Status: service trojan-rust status"
-    yellow "Total: $SECONDS seconds"
-    yellow "Edit $trojan_rust_location/server.json before running!"
+    systemctl enable "${service_name}.service"
+
+    echo "The ${service_name}.service has been enabled."
+    green "${app_name} installed successfully."
+    yellow "Please configure ${config_file} before starting."
+    echo "Then you can start the service with the following command:"
+    echo "  systemctl start ${service_name}.service"
 }
 
-main() {
+install_generic() {
+    local app_dir="$1"
+    local app_name="$2"
+    local service_name="$3"
+    local repo="$4"
+    local arch="$5"
+    local config_action="$6"
+    local service_description="$7"
+    local service_documentation="$8"
+
+    local temp_dir="${app_dir}/temp"
+    local latest_ver="$(get_latest_ver "${repo}")"
+    local installed_ver="$(get_installed_version "${app_dir}" "${app_name}")"
+
+    # install libs
+    local required_libs="curl wget"
+    if [[ "${app_name}" == "trojan-go" ]]; then
+        required_libs="${required_libs} unzip"
+    fi
+    install_libs ${required_libs}
+
+    # fresh new install or upgrade
+    local action
+    echo
+    echo "Installed version: ${installed_ver:-none}"
+    echo "Latest version on GitHub: ${latest_ver#v}"
+
+    if [[ -z "${installed_ver}" ]]; then
+        yellow "No installation detected."
+        read -r -p "Do you want to install ${service_name} now? (y/n, default y): " confirm_install
+        confirm_install=${confirm_install:-y}
+        if [[ ! "$confirm_install" =~ ^[Yy]$ ]]; then
+            yellow "Installation canceled. Exiting script."
+            exit 0
+        fi
+        echo "Starting fresh install of ${latest_ver}..."
+        action="install"
+    elif [[ "${installed_ver}" != "${latest_ver#v}" ]]; then
+        green "Upgrade available: ${latest_ver} (installed: ${installed_ver})"
+        read -r -p "Do you want to upgrade now? (y/n, default y): " confirm_upgrade
+        confirm_upgrade=${confirm_upgrade:-y}
+        if [[ ! "$confirm_upgrade" =~ ^[Yy]$ ]]; then
+            yellow "Upgrade canceled. No changes made."
+            exit 0
+        fi
+        action="upgrade"
+    else
+        green "Already up-to-date."
+        exit 0
+    fi
+
+    # download target program and move to installation folder
+    download_and_move "${app_dir}" "${app_name}" "${repo}" "${arch}" "${temp_dir}" "${latest_ver}"
+
+    if [[ "${action}" == "install" ]]; then
+        config_new_install "${app_dir}" "${app_name}" "${service_name}" "${latest_ver}" "${service_description}" "${service_documentation}" "${temp_dir}"
+    elif [[ "${action}" == "upgrade" ]]; then
+        green "${app_name} upgraded successfully."
+        if systemctl is-active --quiet "${service_name}.service"; then
+            systemctl restart "${service_name}.service"
+            echo "The ${service_name}.service has been restarted."
+        else
+            yellow "The ${service_name}.service is not running."
+            echo "You can start the service with the following command:"
+            echo "  systemctl start ${service_name}.service"
+        fi
+    fi
+
+    # clean up temp dir
+    rm -rf "${temp_dir}"
+    exit 0
+}
+
+install_trojan_go() {
+    local arch
+    case "$(uname -m)" in
+        x86_64)  arch="amd64" ;;
+        aarch64) arch="armv8" ;;
+        *) red "Error: Unsupported architecture: $(uname -m)"; exit 1 ;;
+    esac
+    local app_dir=$TROJAN_GO_DIR
+    local app_name="trojan-go"
+    local service_name="trojan-go"
+    local config_action="copy"
+    local service_description="Trojan-Go"
+    local service_documentation="https://p4gefau1t.github.io/trojan-go/"
+    local repo
+    echo
+    echo "Please select the source:"
+    while true; do
+        echo
+        echo " 1) Original  (p4gefau1t/trojan-go)"
+        echo " 2) Fork      (fregie/trojan-go)"
+        echo " 0) Return"
+        echo
+        read -rp "Enter a number (1/2/0): " num
+        case "$num" in
+            0) yellow "Back to main menu."; return ;;
+            1) repo="p4gefau1t/trojan-go"; break ;;
+            2) repo="fregie/trojan-go"; break ;;
+            *) red "Invalid input. Please enter 1, 2, or 0." ;;
+        esac
+    done
+
+    install_generic "${app_dir}" "${app_name}" "${service_name}" "${repo}" "${arch}" "${config_action}" "${service_description}" "${service_documentation}"
+}
+
+install_trojan_rust() {
+    local arch="$(uname -m)"
+    if [[ "${arch}" != "x86_64" ]]; then
+        red "Error: TrojanRust only supports x86_64 architecture."
+        exit 1
+    fi
+
+    local app_dir=$TROJAN_RUST_DIR
+    local app_name="trojan_rust"
+    local service_name="trojan-rust"
+    local repo="cty123/TrojanRust"
+    local config_action="generate"
+    local service_description="TrojanRust"
+    local service_documentation="https://github.com/cty123/TrojanRust"
+
+    install_generic "${app_dir}" "${app_name}" "${service_name}" "${repo}" "${arch}" "${config_action}" "${service_description}" "${service_documentation}"
+}
+
+
+main(){
     if [[ $(id -u) != 0 ]]; then
         echo "Please run this script as root."
         exit 1
     fi
-    if [[ $(uname -m 2> /dev/null) != x86_64 ]]; then
-        echo "Please run this script on x86_64 machine."
-        exit 1
-    fi
-    clear
-    green "+---------------------------------------------------+"
-    green "| Get the latest version of Trojan-Go/TrojanRust    |"
-    green "| Github : https://github.com/scenery/my-scripts    |"
-    green "| **This script only supports Debian GNU/Linux**    |"
-    green "+---------------------------------------------------+"
-    echo
-    green " 1. Install Trojan-Go"
-    green " 2. Install TrojanRust"
-    yellow " 0. Exit"
-    echo
-    read -p "Enter a number: " num
-    case "$num" in
-        1)
-            install_trojan_go
-            ;;
-        2)
-            install_trojan_rust
-            ;;
-        0)
-            exit 1 
-            ;;
-        *)
-            clear
-            red "Invalid number!"
-            sleep 1s
-            main
-            ;;
-    esac
+
+    green "+------------------------------------------------+"
+    green "| Get the latest version of Trojan-Go/TrojanRust |"
+    green "| Github : https://github.com/scenery/my-scripts |"
+    green "| **This script only supports Debian GNU/Linux** |"
+    green "+------------------------------------------------+"
+    while true; do
+        echo
+        echo " 1. Install Trojan-Go"
+        echo " 2. Install TrojanRust"
+        echo " 0. Exit"
+        echo
+        read -rp "Enter a number (1/2/0): " num
+        case "$num" in
+            1) install_trojan_go ;;
+            2) install_trojan_rust ;;
+            0) echo "Bye~"; exit 0 ;;
+            *) red "Invalid input. Please enter 1, 2, or 0." ;;
+        esac
+    done
 }
 
-# Run
 main
