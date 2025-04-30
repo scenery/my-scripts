@@ -3,17 +3,52 @@
 # Website: https://atpx.com
 # Github: https://github.com/scenery/my-scripts
 
-green(){
-    echo -e "\033[32m\033[01m$1\033[0m"
+green(){ echo -e "\033[32m\033[01m$1\033[0m"; }
+red(){ echo -e "\033[31m\033[01m$1\033[0m"; }
+yellow(){ echo -e "\033[33m\033[01m$1\033[0m"; }
+blue(){ echo -e "\033[34m\033[01m$1\033[0m"; }
+
+confirm() {
+    local prompt="${1:-Are you sure? (y/n, default y): }"
+    local response
+    while true; do
+        read -rp "$prompt" response
+        response=${response:-y}
+        case "$response" in
+            [Yy][Ee][Ss]|[Yy]) return 0 ;;
+            [Nn][Oo]|[Nn]) return 1 ;;
+            *) red "Invalid option. Please enter yes or no." ;;
+        esac
+    done
 }
-red(){
-    echo -e "\033[31m\033[01m$1\033[0m"
-}
-yellow(){
-    echo -e "\033[33m\033[01m$1\033[0m"
-}
-blue(){
-    echo -e "\033[34m\033[01m$1\033[0m"
+
+install_common_packages() {
+    echo "Checking for common packages: vim wget mtr-tiny net-tools dnsutils"
+    packages=(vim wget mtr-tiny net-tools dnsutils)
+    to_install=()
+    for pkg in "${packages[@]}"; do
+        if ! dpkg -s "$pkg" &>/dev/null; then
+            to_install+=("$pkg")
+        fi
+    done
+
+    if [ ${#to_install[@]} -eq 0 ]; then
+        yellow "All common packages are already installed."
+        return
+    fi
+
+    echo "The following packages are missing: ${to_install[*]}"
+    if confirm "Do you want to install them? (y/n, default y): "; then
+        apt update && apt install -y "${to_install[@]}"
+        if [ $? -eq 0 ]; then
+            green "Common packages installed successfully."
+        else
+            red "Failed to install some common packages."
+        fi
+    else
+        yellow "Installation cancelled."
+        return
+    fi
 }
 
 change_hostname() {
@@ -45,153 +80,245 @@ change_hostname() {
     fi
 
     green "Success, you will see the effect on the next session."
-    echo "Back to menu..."
-}
-
-install_bbr() {
-    local current_bbr_status=$(sysctl net.ipv4.tcp_congestion_control | awk '{print $3}')
-    if [[ "$current_bbr_status" == "bbr" ]]; then
-        yellow "TCP BBR has already been enabled, nothing to do."
-        echo "Back to menu..."
-        return
-    fi
-
-    local kernel_version=$(uname -r | cut -d- -f1)
-    if [[ "$(echo -e "${kernel_version}\n4.9" | sort -rV | head -n 1)" != "${kernel_version}" ]]; then
-        red "Your kernel version is lower than 4.9. Please run this script again after upgrading the kernel."
-        echo "Back to menu..."
-        return
-    fi
-
-    echo "The kernel version is greater than or equal to 4.9. Directly setting TCP BBR..."
-    echo "net.core.default_qdisc = fq" >> /etc/sysctl.conf
-    echo "net.ipv4.tcp_congestion_control = bbr" >> /etc/sysctl.conf
-    sysctl -p >/dev/null 2>&1
-
-    local new_bbr_status=$(sysctl net.ipv4.tcp_congestion_control | awk '{print $3}')
-    if [[ "$new_bbr_status" == "bbr" ]]; then
-        green "Setting TCP BBR completed successfully."
-        echo "You can run 'sysctl net.ipv4.tcp_congestion_control' to check the congestion control algorithm in use."
-    else
-        red "Failed to enable TCP BBR. Please check the configuration in /etc/sysctl.conf"
-    fi
-
-    echo "Back to menu..."
 }
 
 change_ssh_port() {
-    echo
-    echo -n "Please enter the SSH port [1024-65535]: "
-    while : 
-    do
-    read SSHPORT
-        if [[ "$SSHPORT" =~ ^[0-9]{2,5}$ || "$SSHPORT" = 22 ]]; then
-            if [[ "$SSHPORT" -ge 1024 && "$SSHPORT" -le 65535 || "$SSHPORT" = 22 ]]; then
-                # Create backup of current SSH config
-                NOW=$(date +"%Y_%m_%d-%H_%M")
-                cp /etc/ssh/sshd_config /etc/ssh/sshd_config.backup.$NOW
-                # Apply changes to sshd_config
-                sed -i -e "/Port /c\Port $SSHPORT" /etc/ssh/sshd_config
-                # Restart SSH service
-                systemctl restart sshd.service
-                echo
-                green "The SSH port has been changed to $SSHPORT."
-                green "Please login using new port to test BEFORE ending this session."
-                echo "Backup file: '/etc/ssh/sshd_config.backup.$NOW'"
-                echo "Back to menu..."
-                break
-            else
-                red "Invalid port: must be 22, or between 1024 and 65535."
-                echo -n "Please enter the SSH port [1024-65535]: "
-            fi
+    while :; do
+        echo
+        echo -rp "Please enter the SSH port [1024-65535]: " SSHPORT
+        if [[ "$SSHPORT" =~ ^[0-9]{2,5}$ ]] && { [[ "$SSHPORT" -ge 1024 && "$SSHPORT" -le 65535 ]] || [[ "$SSHPORT" == 22 ]]; }; then
+            sed -i -e "/^\s*#\?\s*Port[[:space:]]\+/c\Port $SSHPORT" /etc/ssh/sshd_config
+            systemctl restart sshd.service
+            echo
+            green "The SSH port has been changed to $SSHPORT."
+            green "Please login using new port to test BEFORE ending this session."
+            break
         else
-            red "Invalid port: must be numeric!"
-            echo -n "Please enter the SSH port [1024-65535]: "
+            red "Invalid port: must be 22, or between 1024 and 65535."
         fi
     done
 }
 
-install_nginx() {
-    if [ ! "$(command -v curl)" ]; then
-        apt-get install curl -y
-    fi
-    if [ -d /etc/nginx ]; then
-        echo -n "Nginx already installed, still continue? [Y/N]: "
-        while : 
-        do
-        read gonginx
-        case $gonginx in
-            [Yy][Ee][Ss]|[Yy]) 
-                bash <(curl -Ls https://raw.githubusercontent.com/scenery/my-scripts/main/install-nginx.sh) -i 
-                break ;;
-            [Nn][Oo]|[Nn]) 
-                break ;;
-            * ) echo -n "Invalid option, still continue? [Y/N]: " ;;
-        esac
-        done
+install_ufw() {
+    if ! command -v ufw &>/dev/null; then
+        green "Installing UFW..."
+        apt update && apt install -y ufw
+        if [ $? -ne 0 ]; then
+            red "Failed to install UFW."
+            return
+        fi
+        green "UFW installed."
     else
-        bash <(curl -Ls https://raw.githubusercontent.com/scenery/my-scripts/main/install-nginx.sh) -i
+        yellow "UFW is already installed."
+        ufw status verbose
+        return
     fi
-    echo "Back to menu..."
+
+    echo "Setting default rules..."
+    echo "  deny incoming"
+    echo "  allow outgoing"
+    if confirm "Apply default rules? (y/n, default y): "; then
+        ufw default deny incoming
+        ufw default allow outgoing
+        green "Default rules applied."
+    else
+        yellow "No default rules applied."
+        yellow "** You should set default rules first. **"
+        return
+    fi
+
+    echo
+    echo "You can specify which ports to allow through the firewall."
+    echo "Examples:"
+    echo "  - To allow both TCP and UDP for a port, just enter the port number:"
+    echo "    22 443"
+    echo "  - To allow only TCP or only UDP, specify the protocol:"
+    echo "    53/udp 80/tcp"
+    echo "Separate multiple ports with spaces."
+    echo
+    echo "Choose port opening mode:"
+    echo "1) Open specified ports for all"
+    echo "2) Open specified ports for target IP only"
+    read -rp "Select an option [1/2]: " mode
+    case "$mode" in
+        1)
+            read -rp "Enter ports to allow: " ports 
+            client_ip="" ;;
+        2)
+            read -rp "Enter IP address to allow: " client_ip
+            read -rp "Enter ports for $client_ip (e.g. 22 80/tcp): " ports ;;
+        *)
+            red "Invalid option. Please enter 1 or 2."; return ;;
+    esac
+
+    # Preprocess and validate ports
+    local invalid_count=0
+    declare -a rules=()
+    for p in $ports; do
+        if [[ "$p" =~ ^([0-9]+)(/([a-zA-Z]+))?$ ]]; then
+            port="${BASH_REMATCH[1]}"
+            proto="${BASH_REMATCH[3]}"
+            if [ -n "$proto" ]; then
+                proto_lower="${proto,,}"
+                if [[ "$proto_lower" != "tcp" && "$proto_lower" != "udp" ]]; then
+                    red "Invalid protocol in: $p"; invalid_count=$((invalid_count+1)); continue
+                fi
+            fi
+
+            if [ -n "$client_ip" ]; then
+                if [ -n "$proto" ]; then
+                    rules+=("ufw allow from $client_ip to any port $port proto $proto_lower")
+                else
+                    rules+=("ufw allow from $client_ip to any port $port")
+                fi
+            else
+                if [ -n "$proto" ]; then
+                    rules+=("ufw allow $port proto $proto_lower")
+                else
+                    rules+=("ufw allow $port")
+                fi
+            fi
+        else
+            red "Invalid port format: $p"; invalid_count=$((invalid_count+1))
+        fi
+    done
+    if [ $invalid_count -gt 0 ]; then
+        red "Aborting due to invalid port entries."
+        return
+    fi
+
+    echo
+    echo "The following UFW rules will be added:"
+    for rule in "${rules[@]}"; do
+        echo "  $rule"
+    done
+    echo
+    if confirm "Apply these rules? (y/n, default y): "; then
+        for rule in "${rules[@]}"; do
+            $rule
+        done
+        ufw enable
+    else
+        yellow "Configuration cancelled."
+        return
+    fi
 }
 
-ssh_keepalive() {
+keep_ssh_alive() {
     echo "Your 'sshd_config' file will be update to the following parameters:"
     echo "ClientAliveInterval 45"
     echo "ClientAliveCountMax 5"
-    echo -n "Still continue? [Y/N]: "
-    while : 
-    do
-    read goupdate
-    case $goupdate in
-        [Yy][Ee][Ss]|[Yy]) 
-            sed -i "/#TCPKeepAlive /c\TCPKeepAlive yes" /etc/ssh/sshd_config
-            sed -i "/#ClientAliveInterval /c\ClientAliveInterval 45" /etc/ssh/sshd_config
-            sed -i "/#ClientAliveCountMax /c\ClientAliveCountMax 5" /etc/ssh/sshd_config
-            systemctl restart sshd.service
-            break ;;
-        [Nn][Oo]|[Nn]) 
-            break ;;
-        * ) echo -n "Invalid option, still continue? [Y/N]: " ;;
-    esac
-    done
-    echo "Back to menu..."
+    if confirm "Still continue?? (y/n, default y): "; then
+        sed -i "/#TCPKeepAlive /c\TCPKeepAlive yes" /etc/ssh/sshd_config
+        sed -i "/#ClientAliveInterval /c\ClientAliveInterval 45" /etc/ssh/sshd_config
+        sed -i "/#ClientAliveCountMax /c\ClientAliveCountMax 5" /etc/ssh/sshd_config
+        systemctl restart sshd.service
+    else
+        yellow "Configuration cancelled."
+        return
+    fi
 }
 
-colorizing_bash() {
-    echo "Customize Bash Colors in Linux Terminal Prompt"
-    echo "This operation will modify your ‘~/.bashrc’ file"
-    echo -n "Still continue? [Y/N]: "
-    while : 
-    do
-    read goupdate
-    case $goupdate in
-        [Yy][Ee][Ss]|[Yy]) 
-            cat >> ~/.bashrc << 'EOF'
+optimize_tcp() {
+    local sysctl_conf="/etc/sysctl.conf"
+    local current_bbr_status=$(sysctl net.ipv4.tcp_congestion_control | awk '{print $3}')
 
-# Customize Bash Colors in Terminal Prompt
-if [ -z "$PS1" ]; then
-    return
-fi
+    if [[ "$current_bbr_status" == "bbr" ]]; then
+        yellow "TCP BBR has already been enabled."
+    else
+        local kernel_version=$(uname -r | cut -d- -f1)
+        if [[ "$(echo -e "${kernel_version}\n4.9" | sort -rV | head -n 1)" != "${kernel_version}" ]]; then
+            red "Your kernel version is lower than 4.9. Please upgrade the kernel first."
+            return
+        fi
 
-if [ "$(id -u)" -eq 0 ]; then
-    PS1='\[\033[01;31m\]\u\[\033[01;33m\]@\[\033[01;36m\]\h:\[\033[01;33m\]\w\[\033[01;35m\]# \[\033[00m\]'
-else
-    PS1='\u@\h:\w\$ '
-fi
+        echo "Enabling TCP BBR..."
+        sed -i '/^net\.core\.default_qdisc/d' "$sysctl_conf"
+        sed -i '/^net\.ipv4\.tcp_congestion_control/d' "$sysctl_conf"
+        echo "net.core.default_qdisc = fq" >> "$sysctl_conf"
+        echo "net.ipv4.tcp_congestion_control = bbr" >> "$sysctl_conf"
+        sysctl -p >/dev/null 2>&1
 
-alias ls='ls --color=auto'
-alias ll='ls --color=auto -lAF'
+        local new_bbr_status=$(sysctl net.ipv4.tcp_congestion_control | awk '{print $3}')
+        if [[ "$new_bbr_status" == "bbr" ]]; then
+            green "TCP BBR has been successfully enabled."
+        else
+            red "Failed to enable TCP BBR."
+            return
+        fi
+    fi
 
-EOF
-            source ~/.bashrc
-            break ;;
-        [Nn][Oo]|[Nn]) 
-            break ;;
-        * ) echo -n "Invalid option, still continue? [Y/N]: " ;;
+    if ! confirm "Do you want to optimize TCP buffer settings? (y/n, default y): "; then
+        yellow "Skipped TCP buffer optimization."
+        return
+    fi
+
+    echo
+    echo "TCP buffer size is typically calculated based on the Bandwidth-Delay Product (BDP):"
+    echo "  BDP = Bandwidth (bits/sec) × RTT (sec) ÷ 8"
+    echo "For example, 1Gbps bandwidth with 200ms RTT gives:"
+    echo "  1,000,000,000 × 0.2 ÷ 8 = 25MB"
+    echo
+    echo "Recommended profiles for 1Gbps bandwidth:"
+    echo " 1) 40ms latency  → Max buffer: 8MB"
+    echo " 2) 80ms latency  → Max buffer: 16MB"
+    echo " 3) 120ms latency → Max buffer: 24MB"
+    echo " 4) 160ms latency → Max buffer: 32MB"
+    echo " 5) 200ms latency → Max buffer: 40MB"
+    echo " 6) Manual input"
+    echo " 0) Cancel"
+    echo
+    echo "* Note: tcp_adv_win_scale is set to 1"
+    echo "  Actual TCP window ≈ Max buffer / 2"
+    read -rp "Choose an option [0-6]: " choice
+
+    local rmem_max wmem_max tcp_rmem tcp_wmem max_mb max_bytes
+    case "$choice" in
+        1) max_bytes=8388608 ;;
+        2) max_bytes=16777216 ;;
+        3) max_bytes=25165824 ;;
+        4) max_bytes=33554432 ;;
+        5) max_bytes=41943040 ;;
+        6)
+            while true; do
+                read -rp "Enter max TCP buffer size (e.g. 32M): " input
+                if [[ "$input" =~ ^([0-9]+)[Mm]$ ]]; then
+                    max_mb="${BASH_REMATCH[1]}"
+                    max_bytes=$((max_mb * 1024 * 1024))
+                    break
+                else
+                    echo "Invalid format. Please enter a number followed by 'M', e.g. 16M, 32M."
+                fi
+            done ;;
+        0) yellow "Cancelled TCP buffer optimization."; return ;;
+        *) red "Invalid selection."; return ;;
     esac
-    done
-    echo "Back to menu..."
+
+    rmem_max=$max_bytes
+    wmem_max=$max_bytes
+    tcp_rmem="4096 87380 $max_bytes"
+    tcp_wmem="4096 16384 $max_bytes"
+
+    sed -i '/# BEGIN: Optimized TCP buffer and window scaling/,/# END: Optimized TCP buffer settings/d' "$sysctl_conf"
+
+    echo "Applying changes to: $sysctl_conf"
+    sed -i '/^net\.core\.\(rmem_max\|wmem_max\)[[:space:]]*=.*/s/^/#/' "$sysctl_conf"
+    sed -i '/^net\.ipv4\.\(tcp_rmem\|tcp_wmem\|tcp_sack\|tcp_timestamps\|tcp_window_scaling\|tcp_adv_win_scale\)[[:space:]]*=.*/s/^/#/' "$sysctl_conf"
+
+    {
+        echo "# BEGIN: Optimized TCP buffer and window scaling"
+        echo "net.ipv4.tcp_sack = 1"
+        echo "net.ipv4.tcp_timestamps = 1"
+        echo "net.ipv4.tcp_window_scaling = 1"
+        echo "net.ipv4.tcp_adv_win_scale = 1"
+        echo "net.core.rmem_max = $rmem_max"
+        echo "net.core.wmem_max = $wmem_max"
+        echo "net.ipv4.tcp_rmem = $tcp_rmem"
+        echo "net.ipv4.tcp_wmem = $tcp_wmem"
+        echo "# END: Optimized TCP buffer settings"
+    } >> "$sysctl_conf"
+
+    sysctl -p && green "TCP buffer settings applied successfully."
 }
 
 set_timezone() {
@@ -205,24 +332,19 @@ set_timezone() {
     echo "4. America/Los_Angeles"
     echo "5. UTC"
     echo "6. Manually input timezone (e.g., Europe/London, Europe/Berlin, etc.)"
-
-    read -p "Enter your choice [1-6]: " choice
-
+    read -rp "Enter your choice [1-6]: " choice
     case $choice in
         1) timezone="Asia/Singapore" ;;
         2) timezone="Asia/Hong_Kong" ;;
         3) timezone="Asia/Shanghai" ;;
         4) timezone="America/Los_Angeles" ;;
         5) timezone="UTC" ;;
-        6)
+        6) 
             echo "Please enter a valid timezone, following the format: Region/City"
             echo "Refer: https://en.wikipedia.org/wiki/List_of_tz_database_time_zones"
             read -p "Enter the timezone: " timezone
             ;;
-        *)
-            echo "Invalid choice, please try again."
-            return 1
-            ;;
+        *) echo "Invalid choice, please try again."; return 1 ;;
     esac
 
     timedatectl set-timezone "$timezone"
@@ -269,27 +391,57 @@ set_journal_log_size() {
     fi
 
     echo "Your 'SystemMaxUse' will be updated to '${log_size}'."
-    echo -n "Do you want to continue? [Y/N]: "
+    if confirm "Still continue? (y/n, default y): "; then
+        sed -i "s/^#SystemMaxUse=.*$/SystemMaxUse=${log_size}/" /etc/systemd/journald.conf
+        if ! grep -q "^SystemMaxUse=" /etc/systemd/journald.conf; then
+            echo "SystemMaxUse=${log_size}" >> /etc/systemd/journald.conf
+        fi
+        systemctl restart systemd-journald
+        green "Log size updated to ${log_size} and journald service restarted."
+    else
+        yellow "Configuration cancelled."
+        return
+    fi
+}
 
-    while :
-    do
-        read confirm
-        case $confirm in
-            [Yy][Ee][Ss]|[Yy]) 
-                sed -i "s/^#SystemMaxUse=.*$/SystemMaxUse=${log_size}/" /etc/systemd/journald.conf
-                if ! grep -q "^SystemMaxUse=" /etc/systemd/journald.conf; then
-                    echo "SystemMaxUse=${log_size}" >> /etc/systemd/journald.conf
-                fi
-                systemctl restart systemd-journald
-                green "Log size updated to ${log_size} and journald service restarted."
-                break ;;
-            [Nn][Oo]|[Nn])
-                echo "No changes made. Back to menu..."
-                break ;;
-            * )
-                echo -n "Invalid option, do you want to continue? [Y/N]: " ;;
-        esac
-    done
+colorize_bash() {
+    echo "Customize Bash Colors in Linux Terminal Prompt"
+    echo "This operation will modify your '~/.bashrc' file"
+    if confirm "Still continue? (y/n, default y): "; then
+        cat >> ~/.bashrc << 'EOF'
+
+# Customize Bash Colors in Terminal Prompt
+if [ -z "$PS1" ]; then
+    return
+fi
+
+if [ "$(id -u)" -eq 0 ]; then
+    PS1='\[\033[01;31m\]\u\[\033[01;33m\]@\[\033[01;36m\]\h:\[\033[01;33m\]\w\[\033[01;35m\]# \[\033[00m\]'
+else
+    PS1='\u@\h:\w\$ '
+fi
+
+alias ls='ls --color=auto'
+alias ll='ls --color=auto -lAF'
+
+EOF
+        green "Configuration complete. Changes will take effect in the next SSH session."
+    else
+        yellow "Configuration cancelled."
+    fi
+}
+
+install_nginx() {
+    if ! command -v nginx &>/dev/null; then
+        bash <(curl -Ls https://raw.githubusercontent.com/scenery/my-scripts/main/install-nginx.sh) -i
+    else
+        if confirm "Nginx already installed, still continue? (y/n, default y): "; then
+            bash <(curl -Ls https://raw.githubusercontent.com/scenery/my-scripts/main/install-nginx.sh) -i
+        else
+            yellow "Installation cancelled."
+            return
+        fi
+    fi
 }
 
 main() {
@@ -311,31 +463,34 @@ main() {
     while :
     do
         echo
-        green " 1. Change Hostname"
-        green " 2. Change SSH Port"
-        green " 3. Enable TCP BBR"
-        green " 4. Install Nginx"
-        green " 5. SSH Keep Alive"
-        green " 6. Colorizing Bash Prompt"
-        green " 7. Set Timezone"
-        green " 8. Enable NTP Servers"
-        green " 9. Set Journal Log Max Size"
-        yellow " 0. Exit"
+        green "  1. Install Common Packages"
+        green "  2. Change Hostname"
+        green "  3. Change SSH Port"
+        green "  4. Install UFW"
+        green "  5. Keep SSH Alive"
+        green "  6. Optimize TCP"
+        green "  7. Set Timezone"
+        green "  8. Enable NTP Servers"
+        green "  9. Set Journal Log Max Size"
+        green " 10. Colorize Bash Prompt"
+        green " 11. Install Nginx"
+        yellow " *0. Exit"
         echo
-        read -p "Enter your menu choice [0-6]: " num
+        read -rp "Enter your menu choice [0-11]: " num
+        echo
         case "$num" in
-        1)  change_hostname ;;
-        2)  change_ssh_port ;;
-        3)  install_bbr ;;
-        4)  install_nginx ;;
-        5)  ssh_keepalive ;;
-        6)  colorizing_bash ;;
+        1)  install_common_packages ;;
+        2)  change_hostname ;;
+        3)  change_ssh_port ;;
+        4)  install_ufw ;;
+        5)  keep_ssh_alive ;;
+        6)  optimize_tcp ;;
         7)  set_timezone ;;
         8)  enable_ntp ;;
         9)  set_journal_log_size ;;
-        0)  echo "Bye~"
-            sleep 1
-            exit 0 ;;
+        10) colorize_bash ;;
+        11) install_nginx ;;
+        0)  echo "Bye ~ (^_^)v"; echo; exit 0 ;;
         *)  red "Error: Invalid number." ;;
         esac
     done
