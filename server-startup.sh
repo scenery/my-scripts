@@ -299,23 +299,28 @@ optimize_tcp() {
     tcp_rmem="4096 87380 $max_bytes"
     tcp_wmem="4096 16384 $max_bytes"
 
-    sed -i '/# BEGIN: Optimized TCP buffer and window scaling/,/# END: Optimized TCP buffer settings/d' "$sysctl_conf"
+    sed -i '/# BEGIN: Optimized TCP buffer/,/# END: Optimized TCP buffer/d' "$sysctl_conf"
 
     echo "Applying changes to: $sysctl_conf"
     sed -i '/^net\.core\.\(rmem_max\|wmem_max\)[[:space:]]*=.*/s/^/#/' "$sysctl_conf"
     sed -i '/^net\.ipv4\.\(tcp_rmem\|tcp_wmem\|tcp_sack\|tcp_timestamps\|tcp_window_scaling\|tcp_adv_win_scale\)[[:space:]]*=.*/s/^/#/' "$sysctl_conf"
 
     {
-        echo "# BEGIN: Optimized TCP buffer and window scaling"
+        echo "# BEGIN: Optimized TCP buffer"
+        echo "fs.file-max = 2097152"
         echo "net.ipv4.tcp_sack = 1"
+        echo "net.ipv4.tcp_fack = 1"
         echo "net.ipv4.tcp_timestamps = 1"
+        echo "net.ipv4.tcp_no_metrics_save = 1"
+        echo "net.ipv4.tcp_mtu_probing = 1"
         echo "net.ipv4.tcp_window_scaling = 1"
         echo "net.ipv4.tcp_adv_win_scale = 1"
+        echo "net.ipv4.tcp_moderate_rcvbuf = 1"
         echo "net.core.rmem_max = $rmem_max"
         echo "net.core.wmem_max = $wmem_max"
         echo "net.ipv4.tcp_rmem = $tcp_rmem"
         echo "net.ipv4.tcp_wmem = $tcp_wmem"
-        echo "# END: Optimized TCP buffer settings"
+        echo "# END: Optimized TCP buffer"
     } >> "$sysctl_conf"
 
     sysctl -p && green "TCP buffer settings applied successfully."
