@@ -297,7 +297,7 @@ optimize_tcp() {
     rmem_max=$max_bytes
     wmem_max=$max_bytes
     tcp_rmem="4096 87380 $max_bytes"
-    tcp_wmem="4096 16384 $max_bytes"
+    tcp_wmem="4096 65536 $max_bytes"
 
     sed -i '/# BEGIN: Optimized TCP buffer/,/# END: Optimized TCP buffer/d' "$sysctl_conf"
 
@@ -307,11 +307,9 @@ optimize_tcp() {
 
     {
         echo "# BEGIN: Optimized TCP buffer"
-        echo "fs.file-max = 2097152"
         echo "net.ipv4.tcp_sack = 1"
         echo "net.ipv4.tcp_fack = 1"
         echo "net.ipv4.tcp_timestamps = 1"
-        echo "net.ipv4.tcp_no_metrics_save = 1"
         echo "net.ipv4.tcp_mtu_probing = 1"
         echo "net.ipv4.tcp_window_scaling = 1"
         echo "net.ipv4.tcp_adv_win_scale = 1"
