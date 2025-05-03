@@ -85,14 +85,23 @@ change_hostname() {
 change_ssh_port() {
     while :; do
         echo
-        echo -rp "Please enter the SSH port [1024-65535]: " SSHPORT
-        if [[ "$SSHPORT" =~ ^[0-9]{2,5}$ ]] && { [[ "$SSHPORT" -ge 1024 && "$SSHPORT" -le 65535 ]] || [[ "$SSHPORT" == 22 ]]; }; then
-            sed -i -e "/^\s*#\?\s*Port[[:space:]]\+/c\Port $SSHPORT" /etc/ssh/sshd_config
-            systemctl restart sshd.service
-            echo
-            green "The SSH port has been changed to $SSHPORT."
-            green "Please login using new port to test BEFORE ending this session."
-            break
+        read -rp "Please enter the SSH port [1024-65535, or 22]: " SSHPORT
+        if [[ "$SSHPORT" =~ ^[0-9]+$ ]] && { [[ "$SSHPORT" -eq 22 ]] || [[ "$SSHPORT" -ge 1024 && "$SSHPORT" -le 65535 ]]; }; then
+            if grep -qE "^\s*#?\s*Port\s+[0-9]+" /etc/ssh/sshd_config; then
+                echo "You entered port: $SSHPORT"
+                if confirm "Do you want to change the SSH port to $SSHPORT? (y/n, default y): "; then
+                    sed -i -E "s|^\s*#?\s*Port\s+[0-9]+|Port $SSHPORT|" /etc/ssh/sshd_config
+                    systemctl restart sshd.service
+                    echo
+                    green "The SSH port has been changed to $SSHPORT."
+                    blue "Please login using the new port to test BEFORE ending this session."
+                    break
+                else
+                    yellow "Change aborted by user."
+                fi
+            else
+                yellow "No matching Port line found in sshd_config. Change aborted."
+            fi
         else
             red "Invalid port: must be 22, or between 1024 and 65535."
         fi
