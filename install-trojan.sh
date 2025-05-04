@@ -142,7 +142,7 @@ config_new_install() {
             mv "${temp_dir}/example/server.json" "${config_file}"
             chmod 644 "${config_file}"
         else
-            cat > "${config_path}" <<-EOF
+            cat > "${config_file}" <<-EOF
 {
     "inbound": {
         "mode": "TCP",
