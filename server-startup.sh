@@ -182,7 +182,7 @@ install_ufw() {
                 fi
             else
                 if [ -n "$proto" ]; then
-                    rules+=("ufw allow $port proto $proto_lower")
+                    rules+=("ufw allow ${port}/${proto_lower}")
                 else
                     rules+=("ufw allow $port")
                 fi
