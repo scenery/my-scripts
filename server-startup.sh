@@ -108,6 +108,29 @@ change_ssh_port() {
     done
 }
 
+add_ssh_key() {
+    echo "Enter your ed25519 public key:" 
+    read -r pubkey
+    if [[ "$pubkey" =~ ^ssh-ed25519[[:space:]]+[A-Za-z0-9+/]+=*(?:[[:space:]].*)?$ ]]; then
+        mkdir -p /root/.ssh
+        chmod 700 /root/.ssh
+        echo "$pubkey" >> /root/.ssh/authorized_keys
+        chmod 600 /root/.ssh/authorized_keys
+        green "Public key added to /root/.ssh/authorized_keys"
+
+        if confirm "Disable password authentication? (y/n, default y): "; then
+            sed -i 's/^#\?PubkeyAuthentication.*$/PubkeyAuthentication yes/' /etc/ssh/sshd_config
+            sed -i 's/^#\?PasswordAuthentication.*$/PasswordAuthentication no/' /etc/ssh/sshd_config
+            systemctl restart sshd.service
+            green "Password authentication disabled, PubkeyAuthentication enabled."
+        else
+            yellow "Password authentication left unchanged."
+        fi
+    else
+        red "Invalid ed25519 public key format."
+    fi
+}
+
 install_ufw() {
     if ! command -v ufw &>/dev/null; then
         green "Installing UFW..."
@@ -472,38 +495,39 @@ main() {
     green "| Written by ATP <https://atpx.com>                 |"
     green "| Github : https://github.com/scenery/my-scripts    |"
     green "+---------------------------------------------------+"
-    while :
-    do
+    while :; do
         echo
         green "  1. Install Common Packages"
         green "  2. Change Hostname"
         green "  3. Change SSH Port"
-        green "  4. Install UFW"
-        green "  5. Keep SSH Alive"
-        green "  6. Optimize TCP"
-        green "  7. Set Timezone"
-        green "  8. Enable NTP Servers"
-        green "  9. Set Journal Log Max Size"
-        green " 10. Colorize Bash Prompt"
-        green " 11. Install Nginx"
+        green "  4. Add SSH Key"
+        green "  5. Install UFW"
+        green "  6. Keep SSH Alive"
+        green "  7. Optimize TCP"
+        green "  8. Set Timezone"
+        green "  9. Enable NTP Servers"
+        green " 10. Set Journal Log Max Size"
+        green " 11. Colorize Bash Prompt"
+        green " 12. Install Nginx"
         yellow " *0. Exit"
         echo
-        read -rp "Enter your menu choice [0-11]: " num
+        read -rp "Enter your menu choice [0-12]: " num
         echo
         case "$num" in
-        1)  install_common_packages ;;
-        2)  change_hostname ;;
-        3)  change_ssh_port ;;
-        4)  install_ufw ;;
-        5)  keep_ssh_alive ;;
-        6)  optimize_tcp ;;
-        7)  set_timezone ;;
-        8)  enable_ntp ;;
-        9)  set_journal_log_size ;;
-        10) colorize_bash ;;
-        11) install_nginx ;;
-        0)  echo "Bye ~ (^_^)v"; echo; exit 0 ;;
-        *)  red "Error: Invalid number." ;;
+            1) install_common_packages ;; 
+            2) change_hostname ;; 
+            3) change_ssh_port ;; 
+            4) add_ssh_key ;; 
+            5) install_ufw ;; 
+            6) keep_ssh_alive ;; 
+            7) optimize_tcp ;; 
+            8) set_timezone ;; 
+            9) enable_ntp ;; 
+            10) set_journal_log_size ;; 
+            11) colorize_bash ;; 
+            12) install_nginx ;; 
+            0) echo "Bye ~ (^_^)v"; echo; exit 0 ;;
+            *) red "Error: Invalid number." ;; 
         esac
     done
 }
