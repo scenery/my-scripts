@@ -111,7 +111,7 @@ change_ssh_port() {
 add_ssh_key() {
     echo "Enter your ed25519 public key:" 
     read -r pubkey
-    if [[ "$pubkey" =~ ^ssh-ed25519[[:space:]]+[A-Za-z0-9+/]+=*(?:[[:space:]].*)?$ ]]; then
+    if [[ "$pubkey" =~ ^ssh-ed25519\ [A-Za-z0-9+/=]{50,100}(\ [^[:space:]]+)?$ ]]; then
         mkdir -p /root/.ssh
         chmod 700 /root/.ssh
         echo "$pubkey" >> /root/.ssh/authorized_keys
