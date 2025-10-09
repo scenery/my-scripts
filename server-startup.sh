@@ -253,6 +253,17 @@ keep_ssh_alive() {
 
 optimize_tcp() {
     local sysctl_conf="/etc/sysctl.conf"
+    if [[ -f /etc/debian_version ]]; then
+        local debian_ver=$(awk -F. '{print $1}' /etc/debian_version)
+        if [[ "$debian_ver" =~ ^[0-9]+$ ]] && (( debian_ver >= 13 )); then
+            sysctl_conf="/etc/sysctl.d/99-custom.conf"
+            echo "Detected Debian $debian_ver or higher, using $sysctl_conf instead of /etc/sysctl.conf"
+            if [[ ! -f "$sysctl_conf" ]]; then
+                echo "# Custom sysctl settings" > "$sysctl_conf"
+            fi
+        fi
+    fi
+    
     local current_bbr_status=$(sysctl net.ipv4.tcp_congestion_control | awk '{print $3}')
 
     if [[ "$current_bbr_status" == "bbr" ]]; then
@@ -353,7 +364,7 @@ optimize_tcp() {
         echo "# END: Optimized TCP buffer"
     } >> "$sysctl_conf"
 
-    sysctl -p && green "TCP buffer settings applied successfully."
+    sysctl -p "$sysctl_conf" && green "TCP buffer settings applied successfully."
 }
 
 set_timezone() {
