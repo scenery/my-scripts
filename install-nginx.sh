@@ -35,13 +35,18 @@ green(){ echo -e "\033[32m\033[01m$1\033[0m"; }
 red(){ echo -e "\033[31m\033[01m$1\033[0m"; }
 yellow(){ echo -e "\033[33m\033[01m$1\033[0m"; }
 
+check_url() {
+    local code=$(curl -sL -I -o /dev/null -w "%{http_code}" "$1")
+    [[ "$code" == "200" || "$code" == "302" ]]
+}
+
 get_safe_build_dir() {
     local target_tmp="/tmp"
     local fallback_tmp="/var/tmp"
     local root_build="/root"
-    
+
     local tmp_avail=$(df -k "$target_tmp" | tail -1 | awk '{print $4}')
-    
+
     if [ "$tmp_avail" -gt 2097152 ]; then
         echo "${target_tmp}/nginx_build_atpx"
     else
@@ -82,18 +87,18 @@ NGX_CONFIGURE="--prefix=${NGX_PREFIX} \
 
 download_source() {
     local version=$1
+    local ssl_tag=$2
     echo "Downloading Nginx ${version} and modules..."
     mkdir -p ${BUILD_DIR}
     wget https://nginx.org/download/nginx-${version}.tar.gz -O "${BUILD_DIR}/nginx.tar.gz"
     mkdir -p "${BUILD_DIR}/nginx" && tar -xzvf "${BUILD_DIR}/nginx.tar.gz" -C "${BUILD_DIR}/nginx" --strip-components 1
-    
+
     echo "Cloning modules..."
     git clone --recursive ${GIT_BROTLI} ${BUILD_DIR}/ngx_brotli
     git clone ${GIT_PURGE} ${BUILD_DIR}/ngx_cache_purge
 
-    echo "Downloading latest OpenSSL..."
-    local ssl_ver=$(curl -s https://api.github.com/repos/openssl/openssl/releases/latest | grep tag_name | cut -f4 -d "\"")
-    wget "https://github.com/openssl/openssl/releases/download/${ssl_ver}/${ssl_ver}.tar.gz" -O "${BUILD_DIR}/openssl.tar.gz"
+    echo "Downloading OpenSSL ${ssl_tag}..."
+    wget "https://github.com/openssl/openssl/releases/download/${ssl_tag}/${ssl_tag}.tar.gz" -O "${BUILD_DIR}/openssl.tar.gz"
     mkdir -p "${BUILD_DIR}/openssl" && tar -xzvf "${BUILD_DIR}/openssl.tar.gz" -C "${BUILD_DIR}/openssl" --strip-components 1
 }
 
@@ -208,27 +213,61 @@ install_nginx() {
         green "All dependencies are already installed."
     fi
 
-    echo "Fetching latest Nginx versions from nginx.org..."
+    echo "Fetching latest versions from official sources..."
     ngx_latest_stable=$(curl -s https://nginx.org/packages/debian/pool/nginx/n/nginx/ | grep '"nginx_' | sed -n "s/^.*\">nginx_\(.*\)\~.*$/\1/p" | sort -Vr | head -1 | cut -d'-' -f1)
     ngx_latest_mainline=$(curl -s https://nginx.org/packages/mainline/debian/pool/nginx/n/nginx/ | grep '"nginx_' | sed -n "s/^.*\">nginx_\(.*\)\~.*$/\1/p" | sort -Vr | head -1 | cut -d'-' -f1)
+    ssl_latest_tag=$(curl -s https://api.github.com/repos/openssl/openssl/releases/latest | grep tag_name | cut -f4 -d "\"")
 
+    local final_ngx_ver=""
     while :
     do
         echo
-        echo "Please choose the Nginx version you would like to install: "
-        echo
-        echo "  1. Stable (${ngx_latest_stable} with OpenSSL)"
-        echo "  2. Mainline (${ngx_latest_mainline} with OpenSSL)"
+        echo "Nginx Version Selection:"
+        echo "  1. Stable (${ngx_latest_stable})"
+        echo "  2. Mainline (${ngx_latest_mainline})"
+        echo "  3. Specify Custom Version"
         echo "  0. Back to main menu"
         echo
-        read -p "Enter choice [0-2]: " ver_num
+        read -p "Enter choice [0-3]: " ver_num
         case "${ver_num}" in
-            1) download_source ${ngx_latest_stable}; break ;;
-            2) download_source ${ngx_latest_mainline}; break ;;
+            1) final_ngx_ver="${ngx_latest_stable}"; break ;;
+            2) final_ngx_ver="${ngx_latest_mainline}"; break ;;
+            3)
+                read -p "Enter Nginx version (e.g., 1.26.3): " custom_ngx
+                if check_url "https://nginx.org/download/nginx-${custom_ngx}.tar.gz"; then
+                    final_ngx_ver="${custom_ngx}"; break
+                else
+                    red "Error: Nginx version '${custom_ngx}' not found. Please re-enter."
+                fi
+                ;;
             0) return ;;
             *) red "Error: Invalid number." ;;
         esac
     done
+
+    local final_ssl_tag=""
+    while :
+    do
+        echo
+        yellow "OpenSSL Version Selection:"
+        echo "  - Press Enter to use the latest (${ssl_latest_tag#openssl-})"
+        echo "  - Or input version (e.g., 3.5.5)"
+        read -p "Target OpenSSL: " input_ssl
+        if [ -z "$input_ssl" ]; then
+            final_ssl_tag="$ssl_latest_tag"
+        else
+            [[ "$input_ssl" =~ ^[0-9] ]] && final_ssl_tag="openssl-${input_ssl}" || final_ssl_tag="$input_ssl"
+        fi
+
+        if check_url "https://github.com/openssl/openssl/releases/download/${final_ssl_tag}/${final_ssl_tag}.tar.gz"; then
+            green "OpenSSL ${final_ssl_tag} is available."
+            break
+        else
+            red "Error: OpenSSL version '${final_ssl_tag}' not found. Please re-enter."
+        fi
+    done
+
+    download_source "${final_ngx_ver}" "${final_ssl_tag}"
 
     SECONDS=0
 
@@ -236,7 +275,7 @@ install_nginx() {
 
     cd ${BUILD_DIR}/nginx
     ./configure $NGX_CONFIGURE --with-openssl=${BUILD_DIR}/openssl
-    
+
     echo "Compiling Nginx..."
     if ! make -j$CPU_COUNT; then
         red "Error: Compilation failed. Please check the logs above."
@@ -275,7 +314,6 @@ ExecReload=${NGX_SBIN} -s reload
 ExecStop=/bin/kill -s TERM \$MAINPID
 Restart=on-failure
 RestartSec=5s
-LimitNOFILE=65535
 TimeoutStopSec=5
 PrivateTmp=true
 
@@ -298,7 +336,7 @@ EOF
         systemctl enable nginx
         systemctl start nginx
     fi
-    
+
     if [ $? -eq 0 ]; then
         green "Nginx is up and running."
         setup_logrotate
@@ -319,7 +357,7 @@ main() {
     green "| Author : ATP <https://atpx.com>                            |"
     green "| Github : https://github.com/scenery/my-scripts             |"
     green "+------------------------------------------------------------+"
-    
+
     detect_existing_nginx || true
 
     echo
