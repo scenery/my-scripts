@@ -11,7 +11,7 @@ NGX_LOG_DIR="/var/log/nginx"
 NGX_PID="/run/nginx.pid"
 NGX_LOCK="/run/nginx.lock"
 
-DEPENDENCIES=(build-essential libpcre3 libpcre3-dev libxslt1-dev libbrotli-dev zlib1g zlib1g-dev cmake curl git wget)
+DEPENDENCIES=(build-essential libpcre2-dev libxslt1-dev libbrotli-dev zlib1g zlib1g-dev cmake curl git wget)
 GIT_BROTLI="https://github.com/google/ngx_brotli.git"
 GIT_PURGE="https://github.com/nginx-modules/ngx_cache_purge.git"
 
