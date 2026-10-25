@@ -111,6 +111,102 @@ check_updates() {
     fi
 }
 
+check_and_fix_interface_name() {
+    yellow "Checking network interface naming and configuration compatibility..."
+
+    local cur_iface
+    cur_iface=$(ip -4 route show default 2>/dev/null | awk '{print $5}' | head -n1)
+    if [ -z "$cur_iface" ]; then
+        cur_iface=$(ip link | awk -F: '$0 !~ "lo|vir|docker|veth|br-" && $2 ~ /^[ \t]*[a-z]/ {print $2; exit}' | tr -d ' ')
+    fi
+
+    if [ -z "$cur_iface" ]; then
+        yellow "Notice: Could not identify the primary network interface. Skipping interface check."
+        return
+    fi
+
+    local udev_info
+    udev_info=$(udevadm test-builtin net_id "/sys/class/net/${cur_iface}" 2>/dev/null)
+
+    local new_iface=""
+    for key in ID_NET_NAME_ONBOARD ID_NET_NAME_SLOT ID_NET_NAME_PATH; do
+        val=$(echo "$udev_info" | grep -m1 "^${key}=" | cut -d= -f2)
+        if [ -n "$val" ]; then
+            new_iface="$val"
+            break
+        fi
+    done
+
+    if [ -z "$new_iface" ] || [ "$new_iface" == "$cur_iface" ]; then
+        green "Network interface name remains consistent (${cur_iface}). No network changes required."
+        return
+    fi
+
+    yellow "ALERT: Network interface name is predicted to change from '${cur_iface}' to '${new_iface}' after reboot!"
+    yellow "Scanning system network configurations to prevent network disconnection..."
+
+    local modified=0
+    local backup_tag
+    backup_tag=$(date +%Y%m%d_%H%M%S)
+
+    # 1. Traditional ifupdown
+    if [ -f /etc/network/interfaces ] && grep -qw "${cur_iface}" /etc/network/interfaces; then
+        cp /etc/network/interfaces "/etc/network/interfaces.bak_${backup_tag}" 2>/dev/null || true
+        sed -i "s/\b${cur_iface}\b/${new_iface}/g" /etc/network/interfaces
+        green "Updated: /etc/network/interfaces (${cur_iface} -> ${new_iface})"
+        modified=1
+    fi
+
+    if [ -d /etc/network/interfaces.d ]; then
+        while IFS= read -r file; do
+            if grep -qw "${cur_iface}" "$file"; then
+                cp "$file" "${file}.bak_${backup_tag}" 2>/dev/null || true
+                sed -i "s/\b${cur_iface}\b/${new_iface}/g" "$file"
+                green "Updated: ${file} (${cur_iface} -> ${new_iface})"
+                modified=1
+            fi
+        done < <(find /etc/network/interfaces.d/ -type f 2>/dev/null)
+    fi
+
+    # 2. systemd-networkd
+    if [ -d /etc/systemd/network ]; then
+        while IFS= read -r file; do
+            if grep -qE "^\s*Name\s*=\s*${cur_iface}\b" "$file"; then
+                cp "$file" "${file}.bak_${backup_tag}" 2>/dev/null || true
+                sed -i "s/\b${cur_iface}\b/${new_iface}/g" "$file"
+                green "Updated systemd-networkd file: ${file} (${cur_iface} -> ${new_iface})"
+                modified=1
+            fi
+        done < <(find /etc/systemd/network/ -type f -name "*.network" 2>/dev/null)
+    fi
+
+    # 3. Netplan
+    if [ -d /etc/netplan ]; then
+        while IFS= read -r file; do
+            if grep -qE "^\s*${cur_iface}:" "$file"; then
+                cp "$file" "${file}.bak_${backup_tag}" 2>/dev/null || true
+                sed -i "s/\b${cur_iface}\b/${new_iface}/g" "$file"
+                green "Updated Netplan config: ${file} (${cur_iface} -> ${new_iface})"
+                modified=1
+            fi
+        done < <(find /etc/netplan/ -type f \( -name "*.yaml" -o -name "*.yml" \) 2>/dev/null)
+    fi
+
+    # 4. cloud-init environment
+    if command -v cloud-init &>/dev/null && [ -d /var/lib/cloud/instances ]; then
+        yellow "Cloud-init environment detected. Resetting network cache to allow interface re-detection on boot..."
+        cloud-init clean --configs network 2>/dev/null || true
+        green "Cloud-init network state cleaned."
+        modified=1
+    fi
+
+    if [ "$modified" -eq 1 ]; then
+        green "Network configurations successfully adapted to '${new_iface}'."
+    else
+        yellow "No hardcoded instances of '${cur_iface}' found. System may be using auto-discovery/DHCP by default."
+    fi
+}
+
 cleanup_and_reboot() {
     echo ""
     if confirm "$(yellow "Do you want to clean up unused packages (apt autoremove & autoclean)? (y/n, default y): ")"; then
@@ -200,6 +296,8 @@ upgrade_major_version() {
 
     yellow "Phase 2: Performing full distribution upgrade..."
     apt full-upgrade -y
+
+    check_and_fix_interface_name
 
     green "Upgrade to Debian ${TARGET_VERSION_NUM} (${TARGET_CODENAME}) completed successfully!"
     cleanup_and_reboot
