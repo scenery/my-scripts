@@ -7,6 +7,7 @@ _Note: These scripts are intended for individual testing purposes in a controlle
 ## Table of contents
 
 * [Server Startup](#server-startup)
+* [Upgrade Debian](#upgrade-debian)
 * [Install Nginx](#install-nginx)
 * [Issue SSL Cert](#acme-cert)
 
@@ -22,9 +23,19 @@ bash <(curl -Ls https://raw.githubusercontent.com/scenery/my-scripts/main/server
 
 - Change Hostname
 - Change SSH Port
-- Enable TCP BBR
+- Install UFW
+- Optimize TCP
+- Set Timezone
 - Install Nginx
 - ...
+
+### upgrade-debian
+
+A maintenance and upgrade script for Debian systems. It checks the official Debian repositories for both minor point releases and major distribution upgrades.
+
+```
+bash <(curl -Ls https://raw.githubusercontent.com/scenery/my-scripts/main/upgrade-debian.sh)
+```
 
 ### install-nginx
 
