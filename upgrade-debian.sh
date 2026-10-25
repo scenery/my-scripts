@@ -1,5 +1,5 @@
 #!/bin/bash
-# Written by ATP on 2026-12-25
+# Written by ATP on 2026-10-25
 # Website: https://atpx.com
 # Github: https://github.com/scenery/my-scripts
 
